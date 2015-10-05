@@ -25,7 +25,7 @@ import uk.co.caprica.vlcj.player.MediaPlayerEventAdapter;
 
 public class StartPage {
 
-	private StartPage playVid = this;
+	private static StartPage startPage;
 	private JPanel contentPane;
 	private JPanel buttonPane;
 	private JPanel sidePane;
@@ -33,14 +33,14 @@ public class StartPage {
 	private JPanel audioPane;
 	private JPanel buttonPanel;
 
-	private final JFrame frame;
+	private static JFrame frame;
 	
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 
-	private JButton selectVideo = new Button("Select Video");
-	private JButton createAudio = new Button("Create Commentary");
-	private JButton addAudioButton = new Button("Add Audio");
-	private JButton optionsButton = new Button("Options");
+	private JButton selectVideo = new JButton("Select Video");
+	private JButton createAudio = new JButton("Create Commentary");
+	private JButton addAudioButton = new JButton("Add Audio");
+	private JButton optionsButton = new JButton("Options");
 
 	private JButton rewindButton;
 	private JButton playAndPauseButton;
@@ -73,6 +73,7 @@ public class StartPage {
 	 */
 	public StartPage(final String videoTitle, final String videoPath) {
 		
+		this.startPage = this;
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
 		
@@ -111,20 +112,20 @@ public class StartPage {
 		
 
 		// This button lets the user select a video to play
-		selectVideo = new Button("Select Video");
+		selectVideo = new JButton("Select Video");
 		selectVideo.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		buttonPane.add(selectVideo, BorderLayout.NORTH);
 		// This button lets the user create a commentary to add to the video
-		createAudio = new Button("Create Commentary");
+		createAudio = new JButton("Create Commentary");
 		createAudio.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		buttonPane.add(createAudio, BorderLayout.SOUTH);
 		
 		// This button lets the user select a video to play
-		addAudioButton = new Button("Add Audio");
+		addAudioButton = new JButton("Add Audio");
 		addAudioButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		audioPane.add(addAudioButton, BorderLayout.NORTH);
 		// This button lets the user create a commentary to add to the video
-		optionsButton = new Button("Options");
+		optionsButton = new JButton("Options");
 		optionsButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		audioPane.add(optionsButton, BorderLayout.SOUTH);
 		
@@ -180,7 +181,7 @@ public class StartPage {
 		    public void actionPerformed(ActionEvent e) {
 		    	if(!isRewinding && !isFastForwarding && !isPaused) {
 		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
-	    			btnPlayPause.setText("Play");
+	    			playAndPauseButton.setText("Play");
 		    		isFastForwarding = true;
 		    		// TODO: add logic to fastforward the video
 		    	}
@@ -211,7 +212,7 @@ public class StartPage {
 		});
 		
 		// saves the current edited file as a new file
-		btnSave.addActionListener(new ActionListener() {
+		saveButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
 		    	//can only save if not rewinding or fastforwarding (otherwise some errors occur)
@@ -260,7 +261,6 @@ public class StartPage {
                             "Error",
                             JOptionPane.ERROR_MESSAGE
                         );
-                        goBack();
                     }
                 });
             }
@@ -285,8 +285,8 @@ public class StartPage {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                this.SetStartPage(videoTitle, videoPath);
-                this.runPlayer();
+                startPage.setStartPage(videoTitle, videoPath);
+                startPage.runPlayer();
             }
         });
 	}	
@@ -324,7 +324,7 @@ public class StartPage {
 		}
 	}
 
-	public void setStartPage(videoTitle, videoPath) {
+	public void setStartPage(String videoTitle, String videoPath) {
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
 	}
