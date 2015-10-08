@@ -1,4 +1,4 @@
-package Video;
+package video;
 
 import java.awt.BorderLayout;
 import java.awt.Button;
@@ -17,6 +17,8 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+
+import chooseFiles.FileChooser;
 
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.discovery.NativeDiscovery;
@@ -38,7 +40,6 @@ public class StartPage {
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 
 	private JButton selectVideo = new JButton("Select Video");
-	private JButton createAudio = new JButton("Create Commentary");
 	private JButton addAudioButton = new JButton("Add Audio");
 	private JButton optionsButton = new JButton("Options");
 
@@ -60,7 +61,7 @@ public class StartPage {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					StartPage frame = new StartPage("Welcome to VIDIVOX", "");
+					StartPage start = new StartPage("Welcome to VIDIVOX", "");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -115,12 +116,7 @@ public class StartPage {
 		selectVideo = new JButton("Select Video");
 		selectVideo.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		buttonPane.add(selectVideo, BorderLayout.NORTH);
-		// This button lets the user create a commentary to add to the video
-		createAudio = new JButton("Create Commentary");
-		createAudio.setFont(new Font("Tahoma", Font.PLAIN, 20));
-		buttonPane.add(createAudio, BorderLayout.SOUTH);
-		
-		// This button lets the user select a video to play
+		// This either create an audio to add to the video or select an already created one
 		addAudioButton = new JButton("Add Audio");
 		addAudioButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		audioPane.add(addAudioButton, BorderLayout.NORTH);
@@ -162,6 +158,14 @@ public class StartPage {
 
 		//add action listeners for all of the buttons
 
+		
+		// Add action listeners for the right option pane
+		selectVideo.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		    	FileChooser choose = new FileChooser(true, startPage);
+		    }
+		});
 
 		//controls play/pause/rewind/fast forward functions
 		rewindButton.addActionListener(new ActionListener() {
@@ -244,7 +248,21 @@ public class StartPage {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                    	// TODO: add "play again" functionality
+                    	// When the video finishes set the buttons to be greyed out
+                    	startPage.setPlayBtnText("Play");
+                    	muteButton.setEnabled(false);
+                    	rewindButton.setEnabled(false);
+                    	fastForwardButton.setEnabled(false);
+                    	addAudioButton.setEnabled(false);
+                    	optionsButton.setEnabled(false);
+
+                    	// let the play button restart the video
+                    	playAndPauseButton.addActionListener(new ActionListener() {
+                		    @Override
+                		    public void actionPerformed(ActionEvent e) {
+                		    	startPage.runPlayer();
+                		    }
+                		});
                     }
                 });
             }
@@ -270,6 +288,15 @@ public class StartPage {
 		frame.setContentPane(contentPane);
 		frame.setVisible(true);
 		frame.setTitle("VIDIVOX - " + videoTitle);
+		
+		// When the video frame is first created (i.e. no video is playing yet)
+		// set all the buttons that are to do with controlling the video to be greyed out
+		muteButton.setEnabled(false);
+    	rewindButton.setEnabled(false);
+    	fastForwardButton.setEnabled(false);
+    	addAudioButton.setEnabled(false);
+    	optionsButton.setEnabled(false);
+    	playAndPauseButton.setEnabled(false);
 
 		//video always starts with mute not on playing
 		mediaPlayerComponent.getMediaPlayer().mute(false);
@@ -277,6 +304,15 @@ public class StartPage {
 	
 	public void runPlayer() {
 		mediaPlayerComponent.getMediaPlayer().playMedia(videoPath);
+		// When a video is playing set all the buttons able to be used
+    	muteButton.setEnabled(true);
+    	rewindButton.setEnabled(true);
+    	fastForwardButton.setEnabled(true);
+    	addAudioButton.setEnabled(true);
+    	optionsButton.setEnabled(true);
+    	playAndPauseButton.setEnabled(true);
+    	
+    	startPage.setPlayBtnText("Pause");
 	}
 	
 	// When the video is started it is run from the current frame
@@ -329,4 +365,3 @@ public class StartPage {
 		this.videoPath = videoPath;
 	}
 }
-
