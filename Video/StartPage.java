@@ -6,6 +6,8 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -14,9 +16,12 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+
+import audio.AddAudio;
 
 import chooseFiles.FileChooser;
 
@@ -29,6 +34,7 @@ public class StartPage {
 
 	private static StartPage startPage;
 	private JPanel contentPane;
+	private JPanel videoPane;
 	private JPanel buttonPane;
 	private JPanel sidePane;
 	private JPanel titlePane;
@@ -38,6 +44,7 @@ public class StartPage {
 	private static JFrame frame;
 	
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
+	private JSlider positionSlider;
 
 	private JButton selectVideo = new JButton("Select Video");
 	private JButton addAudioButton = new JButton("Add Audio");
@@ -95,7 +102,20 @@ public class StartPage {
 		contentPane = new JPanel();
 		contentPane.setLayout(new BorderLayout());
 		mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
-		contentPane.add(mediaPlayerComponent, BorderLayout.CENTER);
+		videoPane = new JPanel();
+		videoPane.setLayout(new BorderLayout());
+		videoPane.add(mediaPlayerComponent, BorderLayout.CENTER);
+		
+		// Add slider to control the video playback
+		positionSlider = new JSlider();
+		positionSlider.setMinimum(0);
+		positionSlider.setMaximum(1000);
+		positionSlider.setValue(0);
+		positionSlider.setEnabled(true);
+		
+		videoPane.add(positionSlider, BorderLayout.SOUTH);
+		
+		contentPane.add(videoPane, BorderLayout.CENTER);
 		
 		// JPanel to contain the control panel on the lefthand side
 		sidePane = new JPanel();
@@ -158,12 +178,41 @@ public class StartPage {
 
 		//add action listeners for all of the buttons
 
+		// Add listeners for the slider
+		positionSlider.addMouseListener(new MouseListener() {
+			@Override
+			public void mouseClicked(MouseEvent e) {// TODO Auto-generated method stub
+			}
+			@Override
+			public void mousePressed(MouseEvent e) {// TODO Auto-generated method stub
+			}
+			// When the slider is released this is the position that the video goes to
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				setPositionBasedOnSlider();
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {// TODO Auto-generated method stub
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {// TODO Auto-generated method stub
+			}
+		});
 		
 		// Add action listeners for the right option pane
 		selectVideo.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
 		    	FileChooser choose = new FileChooser(true, startPage);
+		    }
+		});
+		
+		addAudioButton.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		    	AddAudio addAudioPage = new AddAudio();
+		    	addAudioPage.setVisible(true);
 		    }
 		});
 
@@ -363,5 +412,14 @@ public class StartPage {
 	public void setStartPage(String videoTitle, String videoPath) {
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
+	}
+	
+	public void setPositionBasedOnSlider() {
+		if (videoPath == "") {
+			return;
+		} else {
+			float position = (float)positionSlider.getValue() / 1000;
+			mediaPlayerComponent.getMediaPlayer().setPosition(position);
+		}
 	}
 }
