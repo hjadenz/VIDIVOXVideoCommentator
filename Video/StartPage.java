@@ -21,6 +21,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import backgroundTasks.BackgroundForward;
+import backgroundTasks.BackgroundRewind;
 import audio.AddAudio;
 
 import chooseFiles.FileChooser;
@@ -37,7 +39,6 @@ public class StartPage {
 	private JPanel videoPane;
 	private JPanel buttonPane;
 	private JPanel sidePane;
-	private JPanel titlePane;
 	private JPanel audioPane;
 	private JPanel buttonPanel;
 
@@ -63,12 +64,15 @@ public class StartPage {
 	private String videoPath;
 	private boolean isMuted;
 	
+	private BackgroundForward fastForward;
+	private BackgroundRewind rewinding;
+	
 	// Start path that initialises the StartPage itself
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					StartPage start = new StartPage("Welcome to VIDIVOX", "");
+					new StartPage("Welcome to VIDIVOX", "");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -107,10 +111,7 @@ public class StartPage {
 		videoPane.add(mediaPlayerComponent, BorderLayout.CENTER);
 		
 		// Add slider to control the video playback
-		positionSlider = new JSlider();
-		positionSlider.setMinimum(0);
-		positionSlider.setMaximum(1000);
-		positionSlider.setValue(0);
+		positionSlider = new JSlider(0,1000,0);
 		positionSlider.setEnabled(true);
 		
 		videoPane.add(positionSlider, BorderLayout.SOUTH);
@@ -204,13 +205,14 @@ public class StartPage {
 		selectVideo.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	FileChooser choose = new FileChooser(true, startPage);
+		    	new FileChooser(true, startPage);
 		    }
 		});
 		
 		addAudioButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
+		    	mediaPlayerComponent.getMediaPlayer().pause();
 		    	AddAudio addAudioPage = new AddAudio();
 		    	addAudioPage.setVisible(true);
 		    }
@@ -224,7 +226,8 @@ public class StartPage {
 		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
 	    			playAndPauseButton.setText("Play");
 		    		isRewinding = true;
-		    		// TODO: add logic to rewind the video
+		    		rewinding = new BackgroundRewind(startPage, mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
+		    		rewinding.execute();
 		    	}
 		    }
 		});
@@ -236,7 +239,8 @@ public class StartPage {
 		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
 	    			playAndPauseButton.setText("Play");
 		    		isFastForwarding = true;
-		    		// TODO: add logic to fastforward the video
+		    		fastForward = new BackgroundForward(startPage, mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
+		    		fastForward.execute();
 		    	}
 		    }
 		});
@@ -402,10 +406,10 @@ public class StartPage {
 	}
 	private void cancelRewindForward() {
 		if(isRewinding){
-			// TODO: ability to cancel rewinding
+			rewinding.cancel(true);
 		}
 		if(isFastForwarding){
-			// TODO: ability to cancel rewinding 
+			fastForward.cancel(true);
 		}
 	}
 

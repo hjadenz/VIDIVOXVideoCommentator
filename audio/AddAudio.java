@@ -11,6 +11,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import video.StartPage;
+
 public class AddAudio extends JFrame {
 	
 	private JFrame frame = this;
