@@ -1,6 +1,7 @@
 package chooseFiles;
 
 import java.io.File;
+import java.util.HashMap;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -31,6 +32,7 @@ public class FileChooser {
 	    	path = chooser.getSelectedFile().getAbsolutePath();
 	    	if(videoSelected){
 	    		StartPage.start(name, path);
+	    		StartPage.createNewVideo(name, path);
 	    	}
 	    }
 	}

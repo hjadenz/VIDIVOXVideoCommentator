@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -16,7 +18,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-import backgroundTasks.BackGroundMakeFile;
+import backgroundTasks.BackgroundPreview;
 
 import chooseFiles.FileChooser;
 
@@ -51,6 +53,12 @@ public class AddAudio extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout());
+		
+		frame.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				StartPage.createVideo();
+			}
+		});
 		
 		buttonPane = new JPanel();
 		buttonPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -140,7 +148,7 @@ public class AddAudio extends JFrame {
 				//if the user has selected commentary to save
 				//go into background task to create it
 				
-				BackGroundMakeFile makeFile = new BackGroundMakeFile(StartPage.getVideoPath(), audioPath, lf, StartPage.getVideoTitle(), minutes.getText(), seconds.getText());
+				BackgroundPreview makeFile = new BackgroundPreview(StartPage.getVideoPath(), audioPath, lf, StartPage.getVideoTitle(), minutes.getText(), seconds.getText());
 				makeFile.execute();
 		    }
 

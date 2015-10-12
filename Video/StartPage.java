@@ -10,6 +10,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -64,6 +66,8 @@ public class StartPage {
 	
 	private BackgroundForward fastForward;
 	private BackgroundRewind rewinding;
+	
+	private static Map<String, String> audio;
 	
 	// Start path that initialises the StartPage itself
 	public static void main(String[] args) {
@@ -315,7 +319,7 @@ public class StartPage {
                     	playAndPauseButton.addActionListener(new ActionListener() {
                 		    @Override
                 		    public void actionPerformed(ActionEvent e) {
-                		    	startPage.runPlayer();
+                		    	StartPage.start(videoTitle, videoPath);
                 		    }
                 		});
                     }
@@ -438,5 +442,21 @@ public class StartPage {
 		if (!(media.isDirectory())) {
 			media.mkdir();
 		}
+	}
+	
+	public static int checkAudioAdded() {
+		return audio.size();
+	}
+	
+	public static void createVideo() {
+		if (audio.size() == 1) {
+			start(videoTitle, audio.get(videoTitle));
+		}
+	}
+
+	public static void createNewVideo(String name, String path) {
+		audio = new HashMap<String, String>();
+    	audio.put(name, path);
+    	System.out.println(audio.get(name));
 	}
 }
