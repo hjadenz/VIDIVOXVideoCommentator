@@ -32,12 +32,15 @@ public class AddAudio extends JFrame {
 	private JPanel buttonPane;
 	private JPanel optionPane;
 	private JPanel timePane;
+	private JPanel addPane;
 	
 	private JButton newCommentaryButton;
 	private JButton addAudioButton;
 	
 	private JButton previewButton;
 	private String audioPath;
+	private JButton addButton;
+	private JButton cancelButton;
 	
 	private JLabel audioLabel;
 	private JCheckBox addAtPointer;
@@ -115,10 +118,30 @@ public class AddAudio extends JFrame {
 		
 		contentPane.add(optionPane, BorderLayout.CENTER);
 		
+		addPane = new JPanel();
+		
 		previewButton = new JButton("Preview");
 		previewButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		previewButton.setEnabled(false);
-		contentPane.add(previewButton, BorderLayout.SOUTH);
+		addPane.add(previewButton);
+		
+		contentPane.add(addPane, BorderLayout.SOUTH);
+		
+		addButton = new JButton("Add to Video");
+		addButton.setFont(new Font("Tahoma", Font.BOLD, 14));
+		addButton.setEnabled(false);
+		addPane.add(addButton);
+		
+		cancelButton = new JButton("Cancel");
+		cancelButton.setFont(new Font("Tahoma", Font.BOLD, 14));
+		cancelButton.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		    	StartPage.createVideo();
+		    	frame.dispose();
+		    }
+		});
+		addPane.add(cancelButton);
 		
 		// Add file chooser to select audio
 		addAudioButton.addActionListener(new ActionListener() {
@@ -164,8 +187,10 @@ public class AddAudio extends JFrame {
 	private void setPreviewEnabled() {
 		if (audioLabel.getText() == "") {
 			previewButton.setEnabled(false);
+			addButton.setEnabled(false);
 		} else {
 			previewButton.setEnabled(true);
+			addButton.setEnabled(true);
 		}
 		
 	}
