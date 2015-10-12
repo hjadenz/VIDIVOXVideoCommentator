@@ -1,7 +1,6 @@
 package video;
 
 import java.awt.BorderLayout;
-import java.awt.Button;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -10,14 +9,13 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
@@ -60,8 +58,8 @@ public class StartPage {
 	private boolean isRewinding = false;
 	private boolean isFastForwarding = false;
 	private boolean isPaused = false;
-	private String videoTitle;
-	private String videoPath;
+	private static String videoTitle;
+	private static String videoPath;
 	private boolean isMuted;
 	
 	private BackgroundForward fastForward;
@@ -73,6 +71,7 @@ public class StartPage {
 			public void run() {
 				try {
 					new StartPage("Welcome to VIDIVOX", "");
+					createDirectories();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -85,7 +84,7 @@ public class StartPage {
 	 */
 	public StartPage(final String videoTitle, final String videoPath) {
 		
-		this.startPage = this;
+		StartPage.startPage = this;
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
 		
@@ -126,10 +125,12 @@ public class StartPage {
 		// JPanel to contain the buttons
 		buttonPane = new JPanel();
 		buttonPane.setLayout(new BorderLayout());
+		buttonPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		sidePane.add(buttonPane, BorderLayout.SOUTH);
 
 		audioPane = new JPanel();
 		audioPane.setLayout(new BorderLayout());
+		audioPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		sidePane.add(audioPane, BorderLayout.NORTH);
 		
 
@@ -149,6 +150,7 @@ public class StartPage {
 
 		// JPanel for video related buttons and controls
 		buttonPanel = new JPanel();
+		buttonPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
  
 		rewindButton = new JButton("Rewind");
 		buttonPanel.add(rewindButton);
@@ -205,7 +207,7 @@ public class StartPage {
 		selectVideo.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	new FileChooser(true, startPage);
+		    	new FileChooser(true);
 		    }
 		});
 		
@@ -401,8 +403,11 @@ public class StartPage {
 	public void setPlayBtnText(String s){
 		playAndPauseButton.setText(s);
 	}
-	public String getVideoPath(){
+	public static String getVideoPath(){
 		return videoPath;
+	}
+	public static String getVideoTitle(){
+		return videoTitle;
 	}
 	private void cancelRewindForward() {
 		if(isRewinding){
@@ -414,8 +419,8 @@ public class StartPage {
 	}
 
 	public void setStartPage(String videoTitle, String videoPath) {
-		this.videoTitle = videoTitle;
-		this.videoPath = videoPath;
+		StartPage.videoTitle = videoTitle;
+		StartPage.videoPath = videoPath;
 	}
 	
 	public void setPositionBasedOnSlider() {
@@ -424,6 +429,14 @@ public class StartPage {
 		} else {
 			float position = (float)positionSlider.getValue() / 1000;
 			mediaPlayerComponent.getMediaPlayer().setPosition(position);
+		}
+	}
+	
+	protected static void createDirectories() {
+		// Create a folder to store the media we want to be able to play or listen to
+		File media = new File("VIDIVOXmedia");
+		if (!(media.isDirectory())) {
+			media.mkdir();
 		}
 	}
 }

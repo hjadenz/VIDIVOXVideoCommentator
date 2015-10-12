@@ -1,18 +1,20 @@
 package chooseFiles;
 
 import java.io.File;
-import java.util.List;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import audio.AddAudio;
+
 import video.StartPage;
 
 public class FileChooser {
-	private boolean videoSelected;
 	
-	public FileChooser(boolean videoSelected, StartPage start){
-		this.videoSelected = videoSelected;
+	private String name;
+	private String path;
+	
+	public FileChooser(boolean videoSelected){
 		JFileChooser chooser = new JFileChooser();
 	    File workingDirectory = new File(System.getProperty("user.dir")+ "/VIDIVOXmedia");
 	    chooser.setCurrentDirectory(workingDirectory);
@@ -25,14 +27,15 @@ public class FileChooser {
 	    chooser.setFileFilter(filter);
 	    int returnVal = chooser.showOpenDialog(null);
 	    if(returnVal == JFileChooser.APPROVE_OPTION) {
-	    	String name = chooser.getSelectedFile().getName();
-	    	String path = chooser.getSelectedFile().getAbsolutePath();
+	    	name = chooser.getSelectedFile().getName();
+	    	path = chooser.getSelectedFile().getAbsolutePath();
 	    	if(videoSelected){
-	    		start.start(name, path);
-	    	}else{
-//	    		start.setAudioLabel(name);
-//	    		start.setAudioPath(path);
+	    		StartPage.start(name, path);
 	    	}
 	    }
+	}
+	
+	public void setAudioPath(AddAudio audioPage) {
+		audioPage.copyPath(path, name);
 	}
 }
