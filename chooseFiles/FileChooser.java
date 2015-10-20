@@ -14,9 +14,11 @@ public class FileChooser {
 	
 	private String name;
 	private String path;
+	private StartPage start;
 	
-	public FileChooser(boolean videoSelected){
-		JFileChooser chooser = new JFileChooser();
+	private JFileChooser chooser = new JFileChooser();
+	
+	public void showFileChooser(boolean videoSelected) {
 	    File workingDirectory = new File(System.getProperty("user.dir")+ "/VIDIVOXmedia");
 	    chooser.setCurrentDirectory(workingDirectory);
 	    FileNameExtensionFilter filter;
@@ -32,12 +34,16 @@ public class FileChooser {
 	    	path = chooser.getSelectedFile().getAbsolutePath();
 	    	if(videoSelected){
 	    		StartPage.start(name, path);
-	    		StartPage.createNewVideo(name, path);
+	    		start.createNewVideo(name, path);
 	    	}
 	    }
 	}
 	
 	public void setAudioPath(AddAudio audioPage) {
 		audioPage.copyPath(path, name);
+	}
+	
+	public void addReferenceToStart(StartPage s) {
+		this.start = s;
 	}
 }

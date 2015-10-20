@@ -16,14 +16,16 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 	private String videoTitle;
 	private String minutes;
 	private String seconds;
+	private int time;
 	
-	public BackgroundPreview(String videoPath, String audioPath, JFrame load, String videoTitle, String minutes, String seconds){
+	public BackgroundPreview(String videoPath, String audioPath, JFrame load, String videoTitle, String minutes, String seconds, int time){
 		this.videoPath = videoPath;
 		this.audioPath = audioPath;
 		this.load = load;
 		this.videoTitle = videoTitle;
 		this.minutes = minutes;
 		this.seconds = seconds;
+		this.time = time;
 	}
 	
 	@Override
@@ -33,7 +35,7 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 		// Start by deleting the temporary file used last time
 		removeTemp();
 		// Save user's commentary to a temporary file that includes this commentary in the video
-		cmd = "ffmpeg -ss 00:" + minutes + ":" + seconds + " -t 10 -i " + videoPath + " -i " + audioPath + " -map 0:v -map 1:a VIDIVOXmedia/.preview.avi";
+		cmd = "ffmpeg -ss 00:" + minutes + ":" + seconds + " -t " + time + " -i " + videoPath + " -i " + audioPath + " -map 0:v -map 1:a VIDIVOXmedia/.preview.avi";
 		builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 		
 		try {		

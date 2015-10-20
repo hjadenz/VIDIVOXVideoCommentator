@@ -8,6 +8,9 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -17,6 +20,14 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+
+import org.jaudiotagger.audio.AudioFile;
+import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.audio.exceptions.CannotReadException;
+import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
+import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
+import org.jaudiotagger.tag.Tag;
+import org.jaudiotagger.tag.TagException;
 
 import backgroundTasks.BackgroundPreview;
 
@@ -46,12 +57,15 @@ public class AddAudio extends JFrame {
 	private JCheckBox addAtPointer;
 	private JTextField minutes;
 	private JTextField seconds;
+	
+	private StartPage start;
 
 	/**
 	 * Create the frame.
 	 */
 	public AddAudio() {
 		setBounds(100, 100, 500, 250);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -59,7 +73,7 @@ public class AddAudio extends JFrame {
 		
 		frame.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				StartPage.createVideo();
+				start.createOriginalVideo();
 			}
 		});
 		
@@ -85,7 +99,7 @@ public class AddAudio extends JFrame {
 		
 		audioLabel = new JLabel("");
 		audioLabel.setHorizontalAlignment(SwingConstants.CENTER);
-/*		addAtPointer = new JCheckBox("Add Audio at Pointer");
+		addAtPointer = new JCheckBox("Add Audio at Pointer");
 		addAtPointer.setHorizontalAlignment(SwingConstants.CENTER);
 		addAtPointer.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
@@ -103,7 +117,7 @@ public class AddAudio extends JFrame {
 				
 			}
 		});
-*/		
+		
 		timePane = new JPanel();
 		minutes = new JTextField("00");
 		seconds = new JTextField("00");
@@ -113,7 +127,7 @@ public class AddAudio extends JFrame {
 		timePane.add(seconds);
 		
 		optionPane.add(audioLabel, BorderLayout.NORTH);
-//		optionPane.add(addAtPointer, BorderLayout.SOUTH);
+		optionPane.add(addAtPointer, BorderLayout.SOUTH);
 		optionPane.add(timePane, BorderLayout.CENTER);
 		
 		contentPane.add(optionPane, BorderLayout.CENTER);
@@ -137,7 +151,7 @@ public class AddAudio extends JFrame {
 		cancelButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	StartPage.createVideo();
+		    	start.createOriginalVideo();
 		    	frame.dispose();
 		    }
 		});
@@ -147,7 +161,9 @@ public class AddAudio extends JFrame {
 		addAudioButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	FileChooser chooseAudio = new FileChooser(false);
+		    	FileChooser chooseAudio = new FileChooser();
+		    	chooseAudio.addReferenceToStart(start);
+		    	chooseAudio.showFileChooser(false);
 		    	chooseAudio.setAudioPath(frame);
 		    }
 		});
@@ -170,8 +186,18 @@ public class AddAudio extends JFrame {
 				
 				//if the user has selected commentary to save
 				//go into background task to create it
+				java.util.logging.Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
+				AudioFile audioFile = null;
+				try {
+					audioFile = AudioFileIO.read(new File(audioPath));
+				} catch (CannotReadException | IOException | TagException
+						| ReadOnlyFileException | InvalidAudioFrameException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				int time = audioFile.getAudioHeader().getTrackLength();
 				
-				BackgroundPreview makeFile = new BackgroundPreview(StartPage.getVideoPath(), audioPath, lf, StartPage.getVideoTitle(), minutes.getText(), seconds.getText());
+				BackgroundPreview makeFile = new BackgroundPreview(start.getVideoPath(), audioPath, lf, start.getVideoTitle(), minutes.getText(), seconds.getText(), time);
 				makeFile.execute();
 		    }
 
@@ -193,5 +219,9 @@ public class AddAudio extends JFrame {
 			addButton.setEnabled(true);
 		}
 		
+	}
+	
+	public void addReferenceToPrevious(StartPage s) {
+		this.start = s;
 	}
 }
