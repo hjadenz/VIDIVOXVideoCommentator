@@ -14,18 +14,46 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 	private String audioPath;
 	private JFrame load;
 	private String videoTitle;
+	private String hours;
 	private String minutes;
 	private String seconds;
 	private int time;
 	
-	public BackgroundPreview(String videoPath, String audioPath, JFrame load, String videoTitle, String minutes, String seconds, int time){
+	private StartPage start;
+	
+	public BackgroundPreview(String videoPath, String audioPath, JFrame load, String videoTitle, int position, int time){
 		this.videoPath = videoPath;
 		this.audioPath = audioPath;
 		this.load = load;
 		this.videoTitle = videoTitle;
-		this.minutes = minutes;
-		this.seconds = seconds;
-		this.time = time;
+		
+		if (time < 1) {
+			this.time = 1;
+		} else {
+			this.time = time;
+		}
+		
+		if (((position/60)/60)%60 < 10) {
+			this.hours = "0" + Integer.toString(((position/60)/60)%60);
+		} else {
+			this.hours = Integer.toString(((position/60)/60)%60);
+		}
+		
+		if ((position/60)%60 < 10) {
+			this.minutes = "0" + Integer.toString((position/60)%60);
+		} else {
+			this.minutes = Integer.toString((position/60)%60);
+		}
+		
+		if (position%60 < 10) {
+			this.seconds = "0" + Integer.toString(position%60);
+		} else {
+			this.seconds = Integer.toString(position%60);
+		}
+	}
+	
+	public void addReferenceToStart(StartPage start) {
+		this.start = start;
 	}
 	
 	@Override
@@ -35,7 +63,7 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 		// Start by deleting the temporary file used last time
 		removeTemp();
 		// Save user's commentary to a temporary file that includes this commentary in the video
-		cmd = "ffmpeg -ss 00:" + minutes + ":" + seconds + " -t " + time + " -i " + videoPath + " -i " + audioPath + " -map 0:v -map 1:a VIDIVOXmedia/.preview.avi";
+		cmd = "ffmpeg -ss " + hours + ":" + minutes + ":" + seconds + " -t " + time + " -i " + videoPath + " -i " + audioPath + " -map 0:v -map 1:a VIDIVOXmedia/.preview.avi";
 		builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 		
 		try {		
@@ -62,7 +90,7 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 	public void done(){
 		//play the video and dispose the load screen
 		videoPath = "VIDIVOXmedia/.preview.avi";
-		StartPage.start(videoTitle, videoPath);
+		start.start(videoTitle, videoPath);
 		load.dispose();
 	}
 }

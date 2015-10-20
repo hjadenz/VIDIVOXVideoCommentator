@@ -10,7 +10,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -21,11 +25,20 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSliderUI;
 
+import org.jaudiotagger.audio.AudioFile;
+import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.audio.exceptions.CannotReadException;
+import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
+import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
+import org.jaudiotagger.tag.TagException;
+
+import backgroundTasks.BackGroundMakeFile;
 import backgroundTasks.BackgroundForward;
 import backgroundTasks.BackgroundRewind;
 import backgroundTasks.UpdateSlider;
 import audio.AddAudio;
 import audio.AudioPage;
+import audio.LoadingFrame;
 
 import chooseFiles.FileChooser;
 
@@ -33,6 +46,7 @@ import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.discovery.NativeDiscovery;
 import uk.co.caprica.vlcj.player.MediaPlayer;
 import uk.co.caprica.vlcj.player.MediaPlayerEventAdapter;
+import video.storage.Media;
 import video.storage.MediaList;
 
 /**This class creates the main frame that holds the video component and a number of buttons that allow
@@ -210,10 +224,12 @@ public class StartPage {
 		positionSlider.addMouseListener(new MouseListener() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				// TODO
-				BasicSliderUI ui = (BasicSliderUI) positionSlider.getUI();
+				// When the mouse is clicked the position of the mouse is recorder and used to change
+				// the position of the slider
 				Point p = e.getPoint();
-				int value = ui.valueForXPosition(p.x);
+				BasicSliderUI sliderUI = (BasicSliderUI) positionSlider.getUI();
+				int value = sliderUI.valueForXPosition(p.x);
+				
 				positionSlider.setValue(value);
 				setPositionBasedOnSlider();
 			}
@@ -226,7 +242,6 @@ public class StartPage {
 			public void mouseReleased(MouseEvent e) {
 				setPositionBasedOnSlider();
 			}
-
 			@Override
 			public void mouseEntered(MouseEvent e) {
 			}
@@ -249,7 +264,7 @@ public class StartPage {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
 		    	mediaPlayerComponent.getMediaPlayer().pause();
-		    	AddAudio addAudioPage = new AddAudio();
+		    	AddAudio addAudioPage = new AddAudio(startPage);
 		    	addAudioPage.setVisible(true);
 		    }
 		});
@@ -257,7 +272,7 @@ public class StartPage {
 		createAudio.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	AddAudio a = new AddAudio();
+		    	AddAudio a = new AddAudio(startPage);
 		    	AudioPage audio = new AudioPage(a);
 		    	audio.setVisible(true);
 		    }
@@ -413,7 +428,7 @@ public class StartPage {
 	}
 	
 	// When the video is started it is run from the current frame
-	public static void start(final String videoTitle, final String videoPath){
+	public void start(final String videoTitle, final String videoPath){
         new NativeDiscovery().discover();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -511,8 +526,54 @@ public class StartPage {
 		audio = new MediaList();
 		audio.addInitial(name, path);
 	}
+	
+	public String getOriginalVideoPath() {
+		return audio.getInitialVideoPath();
+	}
 
 	public void updateSlider() {
 		positionSlider.setValue((int) mediaPlayerComponent.getMediaPlayer().getTime()/lengthOfVideo);
+	}
+	
+	public void addAudio(Media media) {
+		audio.add(media);
+	}
+	
+	public void merge() {
+		//show loading screen so user knows something is happening
+		LoadingFrame lf  = new LoadingFrame();
+		lf.setVisible(true);
+		
+		//if the user has selected commentary to save
+		//go into background task to create it
+		AudioFile audioFile = null;
+		try {
+			audioFile = AudioFileIO.read(new File(audio.getAudioPath(0)));
+		} catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		int time = audioFile.getAudioHeader().getTrackLength();
+		
+		BackGroundMakeFile merge = new BackGroundMakeFile(audio.getInitialVideoPath(), audio.getAudioPath(0), lf, audio.getInitialVideoName(), audio.getAudioPosition(0), time);
+		merge.addReferenceToStart(startPage);
+		merge.execute();
+	}
+	
+	public int getLengthOfVideo() {
+		String cmd = "ffprobe " + audio.getInitialVideoPath() + " -show_format 2>&1 | sed -n 's/duration=//p' ";
+		String line = null;
+		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
+		try {
+			Process process = builder.start();
+			process.waitFor();
+			
+			InputStream stdout = process.getInputStream();
+			BufferedReader stdoutBuffered = new BufferedReader(new InputStreamReader(stdout));
+			line = stdoutBuffered.readLine();
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		return (int)Double.parseDouble(line);
 	}
 }

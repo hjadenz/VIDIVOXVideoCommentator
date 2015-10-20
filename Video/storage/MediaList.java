@@ -37,7 +37,7 @@ public class MediaList extends ArrayList<Media> {
 	public String getAudioPath(int order) {
 		return media.get(order).getPath();
 	}
-	public String getAudioPosition(int order) {
+	public int getAudioPosition(int order) {
 		return media.get(order).getTime();
 	}
 }

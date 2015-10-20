@@ -17,6 +17,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
@@ -34,6 +35,7 @@ import backgroundTasks.BackgroundPreview;
 import chooseFiles.FileChooser;
 
 import video.StartPage;
+import video.storage.Media;
 
 @SuppressWarnings("serial")
 public class AddAudio extends JFrame {
@@ -55,21 +57,22 @@ public class AddAudio extends JFrame {
 	
 	private JLabel audioLabel;
 	private JCheckBox addAtPointer;
-	private JTextField minutes;
-	private JTextField seconds;
 	
 	private StartPage start;
+	private JSlider timeSlider;
 
 	/**
 	 * Create the frame.
 	 */
-	public AddAudio() {
+	public AddAudio(final StartPage start) {
 		setBounds(100, 100, 500, 250);
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout());
+		
+		this.start = start;
 		
 		frame.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -107,24 +110,20 @@ public class AddAudio extends JFrame {
 			}
 
 			private void toggleTimeEnabled() {
-				if (minutes.isEnabled()) {
-					minutes.setEnabled(false);
-					seconds.setEnabled(false);
+				if (timeSlider.isEnabled()) {
+					timeSlider.setEnabled(false);
 				} else {
-					minutes.setEnabled(true);
-					seconds.setEnabled(true);
+					timeSlider.setEnabled(true);
 				}
 				
 			}
 		});
 		
+		// Create a slider that lets the user enter a time to put the audio file ------------------------
 		timePane = new JPanel();
-		minutes = new JTextField("00");
-		seconds = new JTextField("00");
+		timeSlider = new JSlider(0, this.start.getLengthOfVideo(), 0);
 		
-		timePane.add(minutes);
-		timePane.add(new JLabel(":"));
-		timePane.add(seconds);
+		timePane.add(timeSlider);
 		
 		optionPane.add(audioLabel, BorderLayout.NORTH);
 		optionPane.add(addAtPointer, BorderLayout.SOUTH);
@@ -143,6 +142,15 @@ public class AddAudio extends JFrame {
 		
 		addButton = new JButton("Add to Video");
 		addButton.setFont(new Font("Tahoma", Font.BOLD, 14));
+		addButton.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		    	Media m = new Media(audioPath, timeSlider.getValue());
+		    	start.addAudio(m);
+		    	start.merge();
+		    	frame.dispose();
+		    }
+		});
 		addButton.setEnabled(false);
 		addPane.add(addButton);
 		
@@ -186,18 +194,17 @@ public class AddAudio extends JFrame {
 				
 				//if the user has selected commentary to save
 				//go into background task to create it
-				java.util.logging.Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 				AudioFile audioFile = null;
 				try {
 					audioFile = AudioFileIO.read(new File(audioPath));
-				} catch (CannotReadException | IOException | TagException
-						| ReadOnlyFileException | InvalidAudioFrameException e1) {
+				} catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				int time = audioFile.getAudioHeader().getTrackLength();
 				
-				BackgroundPreview makeFile = new BackgroundPreview(start.getVideoPath(), audioPath, lf, start.getVideoTitle(), minutes.getText(), seconds.getText(), time);
+				BackgroundPreview makeFile = new BackgroundPreview(start.getOriginalVideoPath(), audioPath, lf, start.getVideoTitle(), timeSlider.getValue(), time);
+				makeFile.addReferenceToStart(start);
 				makeFile.execute();
 		    }
 
@@ -219,9 +226,5 @@ public class AddAudio extends JFrame {
 			addButton.setEnabled(true);
 		}
 		
-	}
-	
-	public void addReferenceToPrevious(StartPage s) {
-		this.start = s;
 	}
 }

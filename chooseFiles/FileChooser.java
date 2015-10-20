@@ -33,7 +33,7 @@ public class FileChooser {
 	    	name = chooser.getSelectedFile().getName();
 	    	path = chooser.getSelectedFile().getAbsolutePath();
 	    	if(videoSelected){
-	    		StartPage.start(name, path);
+	    		start.start(name, path);
 	    		start.createNewVideo(name, path);
 	    	}
 	    }

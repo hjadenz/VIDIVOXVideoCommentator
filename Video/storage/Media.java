@@ -9,9 +9,9 @@ package video.storage;
 public class Media {
 	
 	private String audioPath;
-	private String time;
+	private int time;
 	
-	public Media(String audioPath, String time) {
+	public Media(String audioPath, int time) {
 		this.audioPath = audioPath;
 		this.time = time;
 	}
@@ -19,7 +19,7 @@ public class Media {
 	public String getPath() {
 		return audioPath;
 	}
-	public String getTime() {
+	public int getTime() {
 		return time;
 	}
 }

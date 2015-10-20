@@ -14,16 +14,39 @@ public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 	private String audioPath;
 	private JFrame load;
 	private String videoTitle;
+	private String hours;
 	private String minutes;
 	private String seconds;
 	
-	public BackGroundMakeFile(String videoPath, String audioPath, JFrame load, String videoTitle, String minutes, String seconds){
+	private StartPage start;
+	
+	public BackGroundMakeFile(String videoPath, String audioPath, JFrame load, String videoTitle, int time, int lengthOfAudio){
 		this.videoPath = videoPath;
 		this.audioPath = audioPath;
 		this.load = load;
 		this.videoTitle = videoTitle;
-		this.minutes = minutes;
-		this.seconds = seconds;
+		
+		if (((time/60)/60)%60 < 10) {
+			this.hours = "0" + Integer.toString(((time/60)/60)%60);
+		} else {
+			this.hours = Integer.toString(((time/60)/60)%60);
+		}
+		
+		if ((time/60)%60 < 10) {
+			this.minutes = "0" + Integer.toString((time/60)%60);
+		} else {
+			this.minutes = Integer.toString((time/60)%60);
+		}
+		
+		if (time%60 < 10) {
+			this.seconds = "0" + Integer.toString(time%60);
+		} else {
+			this.seconds = Integer.toString(time%60);
+		}
+	}
+	
+	public void addReferenceToStart(StartPage start) {
+		this.start = start;
 	}
 	
 	@Override
@@ -60,7 +83,7 @@ public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 	public void done(){
 		//play the video and dispose the load screen
 		videoPath = "VIDIVOXmedia/.temporary.avi";
-		StartPage.start(videoTitle, videoPath);
+		start.start(videoTitle, videoPath);
 		load.dispose();
 	}
 }
