@@ -16,11 +16,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import javax.swing.AbstractListModel;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSliderUI;
@@ -94,7 +99,15 @@ public class StartPage {
 	private BackgroundForward fastForward;
 	private BackgroundRewind rewinding;
 	
+	// Audio files that have been added to the video ----------------------------------------------------
 	private static MediaList audio;
+	private JList<String> list;
+	private DefaultListModel<String> listModel;
+	private JPanel audioFiles;
+	
+	private JButton mergeButton = new JButton("Merge");
+	private JButton editButton = new JButton("Edit");
+	private JButton deleteButton = new JButton("Delete");
 	
 	private UpdateSlider update;
 	// Set the length of the video to be 60 seconds by default
@@ -117,6 +130,7 @@ public class StartPage {
 	/**
 	 * Create the frame. This frame includes the video player and option buttons
 	 */
+	@SuppressWarnings({ "unchecked", "serial" })
 	public StartPage(final String videoTitle, final String videoPath) {
 		
 		StartPage.startPage = this;
@@ -184,6 +198,25 @@ public class StartPage {
 		optionsButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		audioPane.add(optionsButton, BorderLayout.SOUTH);
 		
+		
+		// Add a list that contains all the audio files that the user has added to the video ------------
+		audioFiles = new JPanel();
+		
+		listModel = new DefaultListModel<String>();
+		list = new JList<String>(listModel);
+		audioFiles.add(list);
+		list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+		
+		JScrollPane scroll = new JScrollPane(list);
+		sidePane.add(list, BorderLayout.CENTER);
+		
+		// Create action listeners for the audio manipulation buttons:
+		mergeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				startPage.merge();
+			}
+		});
 
 		// JPanel for video related buttons and controls ------------------------------------------------
 		buttonPanel = new JPanel();
@@ -244,9 +277,13 @@ public class StartPage {
 			}
 			@Override
 			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
 			}
 			@Override
 			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
 			}
 		});
 		
@@ -537,6 +574,7 @@ public class StartPage {
 	
 	public void addAudio(Media media) {
 		audio.add(media);
+		listModel.addElement(media.getName());
 	}
 	
 	public void merge() {
@@ -555,7 +593,7 @@ public class StartPage {
 		}
 		int time = audioFile.getAudioHeader().getTrackLength();
 		
-		BackGroundMakeFile merge = new BackGroundMakeFile(audio.getInitialVideoPath(), audio.getAudioPath(0), lf, audio.getInitialVideoName(), audio.getAudioPosition(0), time);
+		BackGroundMakeFile merge = new BackGroundMakeFile(audio.getInitialVideoPath(), audio, lf, audio.getInitialVideoName(), audio.getAudioPosition(0), time);
 		merge.addReferenceToStart(startPage);
 		merge.execute();
 	}

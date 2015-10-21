@@ -1,9 +1,11 @@
 package backgroundTasks;
 
-import java.io.File;
-
-//Author: Catherine Shanly and Hannah Sampson
-//This class saves the audio files in the background
+/**This class saves the commentary file that the user creates using a new thread that the main thread
+ * executes. It save the text as a .wav format, then converts the .wav to a .mp3 file, and deletes the
+ * superfluous .wav file. 
+ * 
+ * @author: Hannah Sampson
+ */
 
 import java.io.IOException;
 
@@ -22,6 +24,7 @@ public BackGroundSaveAudio(String inputText, String filename){
 
 @Override
 protected Void doInBackground() throws Exception {
+	// Take text and turn it into a .wav file using text2wave
 	String cmd = "echo " + inputText + " | text2wave - -o VIDIVOXmedia/" + filename + ".wav";
 
 	ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);

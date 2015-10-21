@@ -2,47 +2,33 @@ package backgroundTasks;
 // This is the logic for creating a file that has the selected video with the soundtrack removed and the selected audio
 // added instead
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
 import video.StartPage;
+import video.storage.MediaList;
 
 public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 	private String videoPath;
-	private String audioPath;
+	private MediaList audioPaths;
 	private JFrame load;
 	private String videoTitle;
-	private String hours;
-	private String minutes;
-	private String seconds;
+	private int time;
 	
 	private StartPage start;
 	
-	public BackGroundMakeFile(String videoPath, String audioPath, JFrame load, String videoTitle, int time, int lengthOfAudio){
+	public BackGroundMakeFile(String videoPath, MediaList audioPaths, JFrame load, String videoTitle, int time, int lengthOfAudio){
 		this.videoPath = videoPath;
-		this.audioPath = audioPath;
+		this.audioPaths = audioPaths;
 		this.load = load;
 		this.videoTitle = videoTitle;
-		
-		if (((time/60)/60)%60 < 10) {
-			this.hours = "0" + Integer.toString(((time/60)/60)%60);
-		} else {
-			this.hours = Integer.toString(((time/60)/60)%60);
-		}
-		
-		if ((time/60)%60 < 10) {
-			this.minutes = "0" + Integer.toString((time/60)%60);
-		} else {
-			this.minutes = Integer.toString((time/60)%60);
-		}
-		
-		if (time%60 < 10) {
-			this.seconds = "0" + Integer.toString(time%60);
-		} else {
-			this.seconds = Integer.toString(time%60);
-		}
+		// time: convert seconds to milliseconds
+		this.time = time * 1000;
 	}
 	
 	public void addReferenceToStart(StartPage start) {
@@ -55,11 +41,24 @@ public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 		ProcessBuilder builder;
 		// Start by deleting the temporary file used last time
 		removeTemp();
+		
+		String audioString = "";
+		String filters = "";
+		String inputs = "";
+		String count = "";
+		for (int i = 1; i <= audioPaths.size(); i++) {
+			audioString = audioString + " -i " + audioPaths.getAudioPath(i - 1);
+			filters = filters + "[" + i + ":a]adelay=" + (audioPaths.getAudioPosition(i-1)*1000+1) + "[aud" + i + "];";
+			inputs = inputs + "[aud" + i + "]";
+			count = Integer.toString(i + 1);
+		}
+		
 		// Save user's commentary to a temporary file that includes this commentary in the video
-		cmd = "ffmpeg -ss 00:" + minutes + ":" + seconds + " -t 10 -i " + videoPath + " -i " + audioPath + " -map 0:v -map 1:a VIDIVOXmedia/.temporary.avi";
+		// Note the code for this ffmpeg command was adapted from http://superuser.com/questions/716320/ffmpeg-placing-audio-at-specific-location-with-complex-filters
+		cmd = "ffmpeg -y -i " + videoPath + audioString + " -filter_complex \"" + filters + inputs + "[0:a]amix=inputs=" + count + "\" VIDIVOXmedia/.temporary.avi";
 		builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 		
-		try {		
+		try {
 			Process process = builder.start();
 			process.waitFor();
 		} catch (IOException | InterruptedException e1) {

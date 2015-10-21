@@ -52,6 +52,7 @@ public class AddAudio extends JFrame {
 	
 	private JButton previewButton;
 	private String audioPath;
+	private String audioName;
 	private JButton addButton;
 	private JButton cancelButton;
 	
@@ -145,7 +146,7 @@ public class AddAudio extends JFrame {
 		addButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	Media m = new Media(audioPath, timeSlider.getValue());
+		    	Media m = new Media(audioPath, timeSlider.getValue(), audioLabel.getText());
 		    	start.addAudio(m);
 		    	start.merge();
 		    	frame.dispose();

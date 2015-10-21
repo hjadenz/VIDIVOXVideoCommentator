@@ -10,10 +10,12 @@ public class Media {
 	
 	private String audioPath;
 	private int time;
+	private String audioName;
 	
-	public Media(String audioPath, int time) {
+	public Media(String audioPath, int time, String audioName) {
 		this.audioPath = audioPath;
 		this.time = time;
+		this.audioName = audioName;
 	}
 	
 	public String getPath() {
@@ -21,5 +23,8 @@ public class Media {
 	}
 	public int getTime() {
 		return time;
+	}
+	public String getName() {
+		return audioName;
 	}
 }
