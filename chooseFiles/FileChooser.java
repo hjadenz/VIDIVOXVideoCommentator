@@ -41,6 +41,7 @@ public class FileChooser {
 	
 	public void setAudioPath(AddAudio audioPage) {
 		audioPage.copyPath(path, name);
+		audioPage.audioFileTime();
 	}
 	
 	public void addReferenceToStart(StartPage s) {

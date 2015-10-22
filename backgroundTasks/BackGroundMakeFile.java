@@ -2,10 +2,7 @@ package backgroundTasks;
 // This is the logic for creating a file that has the selected video with the soundtrack removed and the selected audio
 // added instead
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
@@ -18,17 +15,14 @@ public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 	private MediaList audioPaths;
 	private JFrame load;
 	private String videoTitle;
-	private int time;
 	
 	private StartPage start;
 	
-	public BackGroundMakeFile(String videoPath, MediaList audioPaths, JFrame load, String videoTitle, int time, int lengthOfAudio){
+	public BackGroundMakeFile(String videoPath, MediaList audioPaths, JFrame load, String videoTitle){
 		this.videoPath = videoPath;
 		this.audioPaths = audioPaths;
 		this.load = load;
 		this.videoTitle = videoTitle;
-		// time: convert seconds to milliseconds
-		this.time = time * 1000;
 	}
 	
 	public void addReferenceToStart(StartPage start) {

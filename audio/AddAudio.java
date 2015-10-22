@@ -2,10 +2,13 @@ package audio;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -21,6 +24,7 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicSliderUI;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
@@ -61,6 +65,10 @@ public class AddAudio extends JFrame {
 	
 	private StartPage start;
 	private JSlider timeSlider;
+	private int time;
+	
+	private JLabel endTime;
+	private JLabel addTime;
 
 	/**
 	 * Create the frame.
@@ -122,7 +130,45 @@ public class AddAudio extends JFrame {
 		
 		// Create a slider that lets the user enter a time to put the audio file ------------------------
 		timePane = new JPanel();
+		timePane.setLayout(new BorderLayout());
 		timeSlider = new JSlider(0, this.start.getLengthOfVideo(), 0);
+		
+		// Add the labels that will hold the time value at which the user is adding their audio
+		endTime = new JLabel("00:00:00");
+		addTime = new JLabel("00:00:00");		
+		
+		timePane.add(endTime, BorderLayout.EAST);
+		timePane.add(addTime, BorderLayout.WEST);
+		setLengthOfSlider();
+		
+		// Add the ability to update the label that states the time the slider is on
+		timeSlider.addMouseListener(new MouseListener() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// When the mouse is clicked the position of the mouse is recorder and used to change
+				// the position of the slider
+				Point p = e.getPoint();
+				BasicSliderUI sliderUI = (BasicSliderUI) timeSlider.getUI();
+				int value = sliderUI.valueForXPosition(p.x);
+				
+				timeSlider.setValue(value);
+				setSliderPositionNumber();
+			}
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			// When the slider is released this is the position that the video goes to
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				setSliderPositionNumber();
+			}
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+		});
 		
 		timePane.add(timeSlider);
 		
@@ -166,7 +212,7 @@ public class AddAudio extends JFrame {
 		});
 		addPane.add(cancelButton);
 		
-		// Add file chooser to select audio
+		// Add file chooser to select audio -------------------------------------------------------------
 		addAudioButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -177,7 +223,7 @@ public class AddAudio extends JFrame {
 		    }
 		});
 		
-		// Add file chooser to select audio
+		// Let the user create a new mp3 file, then once finished, add this as the selected audio -------
 		newCommentaryButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -186,6 +232,8 @@ public class AddAudio extends JFrame {
 		    }
 		});
 		
+		// Show the user a small amount of the film, starting from where the user has selected to place
+		// the audio ------------------------------------------------------------------------------------
 		previewButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {	
@@ -193,23 +241,53 @@ public class AddAudio extends JFrame {
 				LoadingFrame lf  = new LoadingFrame();
 				lf.setVisible(true);
 				
-				//if the user has selected commentary to save
-				//go into background task to create it
-				AudioFile audioFile = null;
-				try {
-					audioFile = AudioFileIO.read(new File(audioPath));
-				} catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				int time = audioFile.getAudioHeader().getTrackLength();
+				// Get the total time of the selected audio file (make sure its up to date)
+				audioFileTime();
 				
+				// Run the preview of the audio through the original frame
 				BackgroundPreview makeFile = new BackgroundPreview(start.getOriginalVideoPath(), audioPath, lf, start.getVideoTitle(), timeSlider.getValue(), time);
 				makeFile.addReferenceToStart(start);
 				makeFile.execute();
 		    }
 
 		});
+	}
+	
+	private void setLengthOfSlider() {
+		endTime.setText(setTimeString(timeSlider.getMaximum()));
+	}
+	
+	private void setSliderPositionNumber() {
+		addTime.setText(setTimeString(timeSlider.getValue()));
+	}
+	
+	private String setTimeString(int time) {
+		
+		int hours = ((time/60)/60) % 60;
+		int minutes = (time/60) % 60;
+		int seconds = time % 60;
+		
+		String timeCalculation = "";
+		
+		if (hours < 10) {
+			timeCalculation = timeCalculation + "0" + Integer.toString(hours) + ":";
+		} else {
+			timeCalculation = timeCalculation + Integer.toString(hours) + ":";
+		}
+		
+		if (minutes < 10) {
+			timeCalculation = timeCalculation + "0" + Integer.toString(minutes) + ":";
+		} else {
+			timeCalculation = timeCalculation + Integer.toString(minutes) + ":";
+		}
+		
+		if (seconds < 10) {
+			timeCalculation = timeCalculation + "0" + Integer.toString(seconds);
+		} else {
+			timeCalculation = timeCalculation + Integer.toString(seconds);
+		}
+		
+		return timeCalculation;
 	}
 
 	public void copyPath(String path, String name) {
@@ -227,5 +305,28 @@ public class AddAudio extends JFrame {
 			addButton.setEnabled(true);
 		}
 		
+	}
+	
+	public void audioFileTime() {
+		//Calculate the total time of the selected audio file
+		AudioFile audioFile = null;
+		try {
+			audioFile = AudioFileIO.read(new File(audioPath));
+		} catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e1) {
+			e1.printStackTrace();
+		}
+		time =  audioFile.getAudioHeader().getTrackLength();
+		setSliderTimeBasedOnAudio();
+	}
+	
+	// This method changes the length of the JSlider based on the length of the audio file the user
+	// has selected so that you can't choose a time that would make the audio go over the end of the 
+	// video
+	private void setSliderTimeBasedOnAudio() {
+		int videoLength = this.start.getLengthOfVideo();
+		
+		timeSlider.setMaximum(videoLength - time);
+		setLengthOfSlider();
+		setSliderPositionNumber();
 	}
 }

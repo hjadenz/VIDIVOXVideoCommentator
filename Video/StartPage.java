@@ -43,7 +43,9 @@ import backgroundTasks.BackgroundRewind;
 import backgroundTasks.UpdateSlider;
 import audio.AddAudio;
 import audio.AudioPage;
+import audio.EditMediaTime;
 import audio.LoadingFrame;
+import audio.SavePage;
 
 import chooseFiles.FileChooser;
 
@@ -201,14 +203,16 @@ public class StartPage {
 		
 		// Add a list that contains all the audio files that the user has added to the video ------------
 		audioFiles = new JPanel();
+		audioFiles.setLayout(new BorderLayout());
+		JPanel buttons = new JPanel();
+		buttons.setLayout(new BorderLayout());
 		
 		listModel = new DefaultListModel<String>();
 		list = new JList<String>(listModel);
-		audioFiles.add(list);
+		
 		list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		
 		JScrollPane scroll = new JScrollPane(list);
-		sidePane.add(list, BorderLayout.CENTER);
 		
 		// Create action listeners for the audio manipulation buttons:
 		mergeButton.addActionListener(new ActionListener() {
@@ -217,6 +221,42 @@ public class StartPage {
 				startPage.merge();
 			}
 		});
+		buttons.add(mergeButton, BorderLayout.EAST);
+		
+		// edit button takes the user to a frame where they can edit the placement of the selected 
+		// audio file, otherwise does nothing
+		editButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (!list.isSelectionEmpty()) {
+					mediaPlayerComponent.getMediaPlayer().pause();
+					EditMediaTime edit = new EditMediaTime(audio, list.getSelectedIndex(), startPage);
+					edit.setVisible(true);
+				}
+			}
+		});
+		buttons.add(editButton, BorderLayout.CENTER);
+		
+		// Delete button removes the selected audio file from the list of audio that has been added
+		// to the video file, otherwise does nothing
+		deleteButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (!list.isSelectionEmpty()) {
+					audio.remove(list.getSelectedIndex());
+					listModel.remove(list.getSelectedIndex());
+					if (audio.size() == 0) {
+						deleteButton.setEnabled(false);
+						editButton.setEnabled(false);
+					}
+				}
+			}
+		});
+		buttons.add(deleteButton, BorderLayout.WEST);
+		
+		audioFiles.add(list, BorderLayout.CENTER);
+		audioFiles.add(buttons, BorderLayout.SOUTH);
+		sidePane.add(audioFiles, BorderLayout.CENTER);
 
 		// JPanel for video related buttons and controls ------------------------------------------------
 		buttonPanel = new JPanel();
@@ -238,13 +278,10 @@ public class StartPage {
 		buttonPanel.add(muteButton);
 		muteButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		
-		// Only show the save button if audio has been added 
-		// (i.e. if a different file has been created)
+		// Note: save button is only enabled when audio is added
 		saveButton = new JButton("Save");
-		if(videoPath.equals("VIDIVOXmedia/.temporary.avi")){
-			buttonPanel.add(saveButton);
-		}
 		saveButton.setFont(new Font("Tahoma", Font.BOLD, 14));
+		buttonPanel.add(saveButton);
         
 		// Add this button panel to the video frame
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -277,13 +314,9 @@ public class StartPage {
 			}
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
 			}
 			@Override
 			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
 			}
 		});
 		
@@ -364,7 +397,7 @@ public class StartPage {
 		    }
 		});
 		
-		// Mutes and unmutes the video
+		// Mutes and unmutes the video ------------------------------------------------------------------
 		muteButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -372,7 +405,7 @@ public class StartPage {
 		    }
 		});
 		
-		// saves the current edited file as a new file
+		// saves the current edited file as a new file --------------------------------------------------
 		saveButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -382,7 +415,8 @@ public class StartPage {
 		    			toggleIsPaused();
 		    			mediaPlayerComponent.getMediaPlayer().pause();
 		    		}
-		    		// TODO: add ability to save files
+		    		SavePage save = new SavePage("", false, null);
+		    		save.setVisible(true);
 		    	}
 		    }
 		});
@@ -444,10 +478,22 @@ public class StartPage {
     	optionsButton.setEnabled(false);
     	playAndPauseButton.setEnabled(false);
     	positionSlider.setEnabled(false);
+    	
+    	mergeButton.setEnabled(false);
+    	editButton.setEnabled(false);
+    	deleteButton.setEnabled(false);
+    	
+    	saveButton.setEnabled(false);
 
 		//video always starts with mute not on playing
 		mediaPlayerComponent.getMediaPlayer().mute(false);
 	}
+	
+	
+	
+	
+	
+	
 	
 	/** Run player enables all of the video manipulation buttons and runs the video itself. */
 	public void runPlayer() {
@@ -575,6 +621,10 @@ public class StartPage {
 	public void addAudio(Media media) {
 		audio.add(media);
 		listModel.addElement(media.getName());
+		mergeButton.setEnabled(true);
+		editButton.setEnabled(true);
+		deleteButton.setEnabled(true);
+		saveButton.setEnabled(true);
 	}
 	
 	public void merge() {
@@ -582,36 +632,19 @@ public class StartPage {
 		LoadingFrame lf  = new LoadingFrame();
 		lf.setVisible(true);
 		
-		//if the user has selected commentary to save
-		//go into background task to create it
-		AudioFile audioFile = null;
-		try {
-			audioFile = AudioFileIO.read(new File(audio.getAudioPath(0)));
-		} catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		if (audio.size() == 0) {
+			startPage.start(audio.getInitialVideoName(), audio.getInitialVideoPath());
+			mergeButton.setEnabled(false);
+			saveButton.setEnabled(false);
+			lf.dispose();
+		} else {
+			BackGroundMakeFile merge = new BackGroundMakeFile(audio.getInitialVideoPath(), audio, lf, audio.getInitialVideoName());
+			merge.addReferenceToStart(startPage);
+			merge.execute();
 		}
-		int time = audioFile.getAudioHeader().getTrackLength();
-		
-		BackGroundMakeFile merge = new BackGroundMakeFile(audio.getInitialVideoPath(), audio, lf, audio.getInitialVideoName(), audio.getAudioPosition(0), time);
-		merge.addReferenceToStart(startPage);
-		merge.execute();
 	}
 	
 	public int getLengthOfVideo() {
-		String cmd = "ffprobe " + audio.getInitialVideoPath() + " -show_format 2>&1 | sed -n 's/duration=//p' ";
-		String line = null;
-		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
-		try {
-			Process process = builder.start();
-			process.waitFor();
-			
-			InputStream stdout = process.getInputStream();
-			BufferedReader stdoutBuffered = new BufferedReader(new InputStreamReader(stdout));
-			line = stdoutBuffered.readLine();
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
-		return (int)Double.parseDouble(line);
+		return audio.getLengthOfVideo();
 	}
 }

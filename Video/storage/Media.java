@@ -18,6 +18,7 @@ public class Media {
 		this.audioName = audioName;
 	}
 	
+	// Return values associated with media file
 	public String getPath() {
 		return audioPath;
 	}
@@ -26,5 +27,10 @@ public class Media {
 	}
 	public String getName() {
 		return audioName;
+	}
+
+	// Set values associated with media file (used when editing added audio)
+	public void setTime(int time) {
+		this.time = time;		
 	}
 }

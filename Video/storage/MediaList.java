@@ -1,5 +1,9 @@
 package video.storage;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 /** This class is a container for any media added to the original video
@@ -39,5 +43,30 @@ public class MediaList extends ArrayList<Media> {
 	}
 	public int getAudioPosition(int order) {
 		return media.get(order).getTime();
+	}
+	public String getAudioName(int order) {
+		return media.get(order).getName();
+	}
+
+	public int getLengthOfVideo() {
+		String cmd = "ffprobe " + this.getInitialVideoPath() + " -show_format 2>&1 | sed -n 's/duration=//p' ";
+		String line = null;
+		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
+		try {
+			Process process = builder.start();
+			process.waitFor();
+			
+			InputStream stdout = process.getInputStream();
+			BufferedReader stdoutBuffered = new BufferedReader(new InputStreamReader(stdout));
+			line = stdoutBuffered.readLine();
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		return (int)Double.parseDouble(line);
+	}
+
+	// Edit the time value associated with a particular media object
+	public void editTime(int position, int time) {
+		media.get(position).setTime(time);
 	}
 }
