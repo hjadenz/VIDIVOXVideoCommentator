@@ -12,11 +12,11 @@ import java.io.IOException;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
-public class BackGroundSaveAudio extends SwingWorker<Void,Void> {
+public class BackgroundSaveAudio extends SwingWorker<Void,Void> {
 	private String inputText;
 	private String filename;
 	
-public BackGroundSaveAudio(String inputText, String filename){
+public BackgroundSaveAudio(String inputText, String filename){
 	this.inputText = inputText;
 	this.filename = filename;
 }

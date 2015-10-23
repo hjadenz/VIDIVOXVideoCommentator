@@ -12,6 +12,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import audio.addToVideo.AddAudio;
+
 import video.SaveVideo;
 
 public class NameTakenPage extends JFrame {

@@ -49,6 +49,8 @@ import audio.SavePage;
 
 import chooseFiles.FileChooser;
 
+import time.PositionSlider;
+import time.TimeLabel;
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.discovery.NativeDiscovery;
 import uk.co.caprica.vlcj.player.MediaPlayer;
@@ -57,7 +59,10 @@ import video.storage.Media;
 import video.storage.MediaList;
 
 /**This class creates the main frame that holds the video component and a number of buttons that allow
- * video manipulation and editing
+ * video manipulation and editing. 
+ * 
+ * Also contains components that remember the selected video's path and name, as well as all the 
+ * information associated with any audio files that have been added to the video. 
  * 
  * @author Hannah Sampson
  */
@@ -66,17 +71,20 @@ public class StartPage {
 
 	// Panels that contain all the buttons and components for the frame ---------------------------------
 	private static StartPage startPage;
-	private JPanel contentPane;
-	private JPanel videoPane;
-	private JPanel buttonPane;
-	private JPanel sidePane;
-	private JPanel audioPane;
-	private JPanel buttonPanel;
+	private JPanel contentPane = new JPanel();
+	private JPanel videoPane = new JPanel();
+	private JPanel selectionPane = new JPanel();
+	private JPanel sidePane = new JPanel();
+	private JPanel audioPane = new JPanel();
+	private JPanel buttonPane = new JPanel();
+	private JPanel mergeButtons = new JPanel();
+	private JPanel sliderPane = new JPanel();
+	private JPanel audioFiles = new JPanel();
 
 	private JFrame frame;
 	
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
-	private JSlider positionSlider;
+	private PositionSlider positionSlider;
 
 	// Buttons ------------------------------------------------------------------------------------------
 	private JButton selectVideo = new JButton("Select Video");
@@ -105,13 +113,15 @@ public class StartPage {
 	private static MediaList audio;
 	private JList<String> list;
 	private DefaultListModel<String> listModel;
-	private JPanel audioFiles;
 	
 	private JButton mergeButton = new JButton("Merge");
 	private JButton editButton = new JButton("Edit");
 	private JButton deleteButton = new JButton("Delete");
 	
+	// Components that show the progression of the video ------------------------------------------------
 	private UpdateSlider update;
+	private TimeLabel endTime = new TimeLabel();
+	private TimeLabel positionTime = new TimeLabel();
 	// Set the length of the video to be 60 seconds by default
 	private int lengthOfVideo = 60;
 	
@@ -129,10 +139,12 @@ public class StartPage {
 		});
 	}
 	
-	/**
-	 * Create the frame. This frame includes the video player and option buttons
+	/** This initial frame holds the video player, all the buttons that control the video playback
+	 *  and the buttons that let you change video/audio selection etc.
+	 *  
+	 *  All buttons apart from "select video" and "create commentary" are greyed out upon starting to
+	 *  enforce that the user needs to select a video before being able to try edit or play anything
 	 */
-	@SuppressWarnings({ "unchecked", "serial" })
 	public StartPage(final String videoTitle, final String videoPath) {
 		
 		StartPage.startPage = this;
@@ -140,7 +152,7 @@ public class StartPage {
 		this.videoPath = videoPath;
 		
         frame = new JFrame("VIDIVOX");
-        frame.setBounds(100, 100, 600, 400);
+        frame.setBounds(100, 100, 1000, 700);
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override
@@ -151,37 +163,41 @@ public class StartPage {
             }
         });
         
-        contentPane = new JPanel();
 		contentPane.setLayout(new BorderLayout());
         
 		// JPanel for media player ----------------------------------------------------------------------
 		mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
-		videoPane = new JPanel();
 		videoPane.setLayout(new BorderLayout());
 		videoPane.add(mediaPlayerComponent, BorderLayout.CENTER);
 		
 		// Add slider to control the video playback -----------------------------------------------------
-		positionSlider = new JSlider(0,1000,0);
-		positionSlider.setEnabled(true);
-		videoPane.add(positionSlider, BorderLayout.SOUTH);
+		sliderPane.setLayout(new BorderLayout());
 		
-		// Start the updater for the position slider
+		positionSlider = new PositionSlider();
+		positionSlider.setEnabled(true);
+		
+		sliderPane.add(positionSlider, BorderLayout.CENTER);
+		sliderPane.add(endTime, BorderLayout.EAST);
+		sliderPane.add(positionTime, BorderLayout.WEST);
+		
+		videoPane.add(sliderPane, BorderLayout.SOUTH);
+		
+		// Start the updater for the position slider (note that this is a background task)
 		createUpdateSlider();
 		
 		contentPane.add(videoPane, BorderLayout.CENTER);
 		
+		
 		// JPanel to contain the control panel on the lefthand side -------------------------------------
-		sidePane = new JPanel();
 		sidePane.setLayout(new BorderLayout());
 		contentPane.add(sidePane, BorderLayout.WEST);
 		
-		// JPanel to contain the buttons
-		buttonPane = new JPanel();
-		buttonPane.setLayout(new BorderLayout());
-		buttonPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		sidePane.add(buttonPane, BorderLayout.SOUTH);
-
-		audioPane = new JPanel();
+		// JPanel to contain the buttons that let the user select a video or create a new commentary
+		selectionPane.setLayout(new BorderLayout());
+		selectionPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		sidePane.add(selectionPane, BorderLayout.SOUTH);
+		// JPanel that contains ability to add a new audio, and choose options associated with adding
+		// this audio to the video
 		audioPane.setLayout(new BorderLayout());
 		audioPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		sidePane.add(audioPane, BorderLayout.NORTH);
@@ -189,10 +205,10 @@ public class StartPage {
 		
 		// This button lets the user select a video to play
 		selectVideo.setFont(new Font("Tahoma", Font.PLAIN, 20));
-		buttonPane.add(selectVideo, BorderLayout.NORTH);
+		selectionPane.add(selectVideo, BorderLayout.NORTH);
 		// This button lets the user create a new mp3 commentary file (without having a video selected)
 		createAudio.setFont(new Font("Tahoma", Font.PLAIN, 20));
-		buttonPane.add(createAudio, BorderLayout.SOUTH);
+		selectionPane.add(createAudio, BorderLayout.SOUTH);
 		// This either create an audio to add to the video or select an already created one
 		addAudioButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		audioPane.add(addAudioButton, BorderLayout.NORTH);
@@ -202,10 +218,8 @@ public class StartPage {
 		
 		
 		// Add a list that contains all the audio files that the user has added to the video ------------
-		audioFiles = new JPanel();
 		audioFiles.setLayout(new BorderLayout());
-		JPanel buttons = new JPanel();
-		buttons.setLayout(new BorderLayout());
+		mergeButtons.setLayout(new BorderLayout());
 		
 		listModel = new DefaultListModel<String>();
 		list = new JList<String>(listModel);
@@ -215,36 +229,46 @@ public class StartPage {
 		JScrollPane scroll = new JScrollPane(list);
 		
 		// Create action listeners for the audio manipulation buttons:
+		
+		// The merge button refreshes the video, i.e. if changes have been made to the audio files
+		// (deleted, position in video changed) this puts these changes into place and plays the newly
+		// created video
 		mergeButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				startPage.merge();
 			}
 		});
-		buttons.add(mergeButton, BorderLayout.EAST);
+		mergeButtons.add(mergeButton, BorderLayout.EAST);
 		
 		// edit button takes the user to a frame where they can edit the placement of the selected 
 		// audio file, otherwise does nothing
 		editButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				// Check that something has been selected, otherwise these buttons do nothing
 				if (!list.isSelectionEmpty()) {
+					// Pause the video, and create a new frame that lets you change the audio position
 					mediaPlayerComponent.getMediaPlayer().pause();
 					EditMediaTime edit = new EditMediaTime(audio, list.getSelectedIndex(), startPage);
 					edit.setVisible(true);
 				}
 			}
 		});
-		buttons.add(editButton, BorderLayout.CENTER);
+		mergeButtons.add(editButton, BorderLayout.CENTER);
 		
 		// Delete button removes the selected audio file from the list of audio that has been added
 		// to the video file, otherwise does nothing
 		deleteButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				// Check if something has been selected, otherwise these buttons do nothing
 				if (!list.isSelectionEmpty()) {
+					// Remove the selected audio from the list of audio files associated with this video
 					audio.remove(list.getSelectedIndex());
 					listModel.remove(list.getSelectedIndex());
+					// If there was only one item in the list, this deletion will mean that there are
+					// now no audio files added, so the edit and delete buttons are no longer active
 					if (audio.size() == 0) {
 						deleteButton.setEnabled(false);
 						editButton.setEnabled(false);
@@ -252,40 +276,34 @@ public class StartPage {
 				}
 			}
 		});
-		buttons.add(deleteButton, BorderLayout.WEST);
+		mergeButtons.add(deleteButton, BorderLayout.WEST);
 		
 		audioFiles.add(list, BorderLayout.CENTER);
-		audioFiles.add(buttons, BorderLayout.SOUTH);
+		audioFiles.add(mergeButtons, BorderLayout.SOUTH);
 		sidePane.add(audioFiles, BorderLayout.CENTER);
 
 		// JPanel for video related buttons and controls ------------------------------------------------
-		buttonPanel = new JPanel();
-		buttonPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		buttonPane.setBorder(new EmptyBorder(5, 5, 5, 5));
  
-		rewindButton = new JButton("Rewind");
-		buttonPanel.add(rewindButton);
+		buttonPane.add(rewindButton);
 		rewindButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		
-		playAndPauseButton = new JButton("Pause");
-		buttonPanel.add(playAndPauseButton);
+		buttonPane.add(playAndPauseButton);
 		playAndPauseButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		
-		fastForwardButton = new JButton("FastForward");
-		buttonPanel.add(fastForwardButton);
+		buttonPane.add(fastForwardButton);
 		fastForwardButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		
-		muteButton = new JButton("Mute");
-		buttonPanel.add(muteButton);
+		buttonPane.add(muteButton);
 		muteButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		
 		// Note: save button is only enabled when audio is added
-		saveButton = new JButton("Save");
 		saveButton.setFont(new Font("Tahoma", Font.BOLD, 14));
-		buttonPanel.add(saveButton);
+		buttonPane.add(saveButton);
         
 		// Add this button panel to the video frame
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		contentPane.add(buttonPanel, BorderLayout.SOUTH);
+		contentPane.add(buttonPane, BorderLayout.SOUTH);
 		
 
 		//add action listeners for all of the buttons ---------------------------------------------------
@@ -435,7 +453,7 @@ public class StartPage {
                 });
             }
             
-            //when finished the video will automatically play again
+            //when finished the video will automatically play again -------------------------------------
            @Override
             public void finished(MediaPlayer mediaPlayer) {
                 SwingUtilities.invokeLater(new Runnable() {
@@ -446,17 +464,14 @@ public class StartPage {
                 });
             } 
            
-           //if the video cannot play, or the audio and video ffmpeg didn't occur properly display an error message
+           //if the video cannot play, or the audio and video ffmpeg didn't occur properly display an 
+           // error message
             @Override
             public void error(MediaPlayer mediaPlayer) {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        JOptionPane.showMessageDialog(
-                            frame,
-                            "Failed to play media.",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                        JOptionPane.showMessageDialog(frame, "Failed to play media.", "Error", JOptionPane.ERROR_MESSAGE
                         );
                     }
                 });
@@ -485,7 +500,7 @@ public class StartPage {
     	
     	saveButton.setEnabled(false);
 
-		//video always starts with mute not on playing
+		//video always starts with sound on
 		mediaPlayerComponent.getMediaPlayer().mute(false);
 	}
 	
@@ -559,16 +574,23 @@ public class StartPage {
 		}
 	}
 
+	/** Set the variables associated with the frame to the currently selected video */
 	public void setStartPage(String videoTitle, String videoPath) {
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
 	}
-	
+	/** Take the value from the slider and use this to set the position of the video
+	 *  Called when a mouse event occurs for the slider
+	 */
 	public void setPositionBasedOnSlider() {
-		float position = (float)positionSlider.getValue() / 1000;
+		float position = (float)positionSlider.getValue() / lengthOfVideo;
 		setPosition(position);
 	}
-	
+	/** As long as there is a video selected, use the "position" value to set the position of the
+	 * 	media player
+	 * 
+	 * @param position
+	 */
 	public void setPosition(float position) {
 		update.cancel(true);
 		if (videoPath == "") {
@@ -576,14 +598,11 @@ public class StartPage {
 		} else {
 			mediaPlayerComponent.getMediaPlayer().setPosition(position);
 		}
+		// When the position is finalised, start the slider checher again
 		createUpdateSlider();
 	}
 	
-	public void createUpdateSlider() {
-		update = new UpdateSlider();
-		update.addReferenceToStart(this);
-		update.execute();
-	}
+	
 	
 	/** Create the media file that stores all the files created by the media player */
 	protected static void createDirectories() {
@@ -594,9 +613,6 @@ public class StartPage {
 		}
 	}
 	
-	public int checkAudioAdded() {
-		return audio.size();
-	}
 	
 	public void createOriginalVideo() {
 		if (audio.size() == 0) {
@@ -604,34 +620,79 @@ public class StartPage {
 		}
 	}
 
-	/** This function is called when a new video is selected, it resets (or sets) the list of media */
-	public void createNewVideo(String name, String path) {
-		audio = new MediaList();
-		audio.addInitial(name, path);
-	}
 	
 	public String getOriginalVideoPath() {
 		return audio.getInitialVideoPath();
 	}
-
-	public void updateSlider() {
-		positionSlider.setValue((int) mediaPlayerComponent.getMediaPlayer().getTime()/lengthOfVideo);
+	
+	/** This method returns the total time of the selected video file */
+	public int getLengthOfVideo() {
+		return lengthOfVideo;
 	}
 	
+	
+	/** This function sets the length of the slider to correspond to the length of the video
+	 * it is called every time a new video is played (as otherwise it stays constant
+	 * 
+	 * It also sets the far right label to the total time of the video
+	 */
+	public void setLengthOfSlider() {
+		positionSlider.setVideoLength(lengthOfVideo);
+		endTime.setTimeText(lengthOfVideo);
+	}
+	
+	/** This method creates and executes the background task that updates the slider */
+	private void createUpdateSlider() {
+		update = new UpdateSlider();
+		update.addReferenceToStart(this);
+		update.execute();
+	}
+	
+	/** This is the method that is called to update the slider underneath the playing video
+	 *  It is called by UpdateSlider (a background task which can be cancelled at any point) */
+	public void updateSlider() {
+		positionSlider.setValue((int) mediaPlayerComponent.getMediaPlayer().getTime()/1000);
+		positionTime.setTimeText(positionSlider.getValue());
+	}
+	
+	
+
+	/** This function is called when a new video is selected, it resets (or sets) the list of media 
+	 * so that each new video has a different set of added audio files
+	 * 
+	 * It also sets the length of the slider and sets the label associated with this
+	 */
+	public void createNewVideo(String name, String path) {
+		audio = new MediaList();
+		audio.addInitial(name, path);
+		lengthOfVideo = audio.getLengthOfVideo();
+		setLengthOfSlider();
+	}
+	
+	/** This method is used when a new audio file has been added to the video */
 	public void addAudio(Media media) {
+		// Add the new audio file to the list of audio files
 		audio.add(media);
 		listModel.addElement(media.getName());
+		// As there is now at least one audio file in the list, set all of the buttons to be enabled
 		mergeButton.setEnabled(true);
 		editButton.setEnabled(true);
 		deleteButton.setEnabled(true);
 		saveButton.setEnabled(true);
 	}
 	
+	/** When the merge button is pressed, any changes that the user has made to the video, and it's 
+	 * list of audio files is applied, and this new video is played
+	 */
 	public void merge() {
 		//show loading screen so user knows something is happening
 		LoadingFrame lf  = new LoadingFrame();
 		lf.setVisible(true);
 		
+		// If no audio fies have been added, just play the original video
+		// Disable the save function and merge funtion as there is no change from the original file
+		
+		// Otherwise create the new video file with the changes to the audio files applied
 		if (audio.size() == 0) {
 			startPage.start(audio.getInitialVideoName(), audio.getInitialVideoPath());
 			mergeButton.setEnabled(false);
@@ -642,9 +703,5 @@ public class StartPage {
 			merge.addReferenceToStart(startPage);
 			merge.execute();
 		}
-	}
-	
-	public int getLengthOfVideo() {
-		return audio.getLengthOfVideo();
 	}
 }

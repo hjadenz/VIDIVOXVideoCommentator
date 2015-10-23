@@ -7,25 +7,25 @@ import java.io.IOException;
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
-import video.StartPage;
+import video.VIDIVOXstart;
 import video.storage.MediaList;
 
-public class BackGroundMakeFile extends SwingWorker<Void, Void> {
+public class BackgroundMakeFile extends SwingWorker<Void, Integer> {
 	private String videoPath;
 	private MediaList audioPaths;
 	private JFrame load;
 	private String videoTitle;
 	
-	private StartPage start;
+	private VIDIVOXstart start;
 	
-	public BackGroundMakeFile(String videoPath, MediaList audioPaths, JFrame load, String videoTitle){
+	public BackgroundMakeFile(String videoPath, MediaList audioPaths, JFrame load, String videoTitle){
 		this.videoPath = videoPath;
 		this.audioPaths = audioPaths;
 		this.load = load;
 		this.videoTitle = videoTitle;
 	}
 	
-	public void addReferenceToStart(StartPage start) {
+	public void addReferenceToStart(VIDIVOXstart start) {
 		this.start = start;
 	}
 	
@@ -53,15 +53,16 @@ public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 		builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 		
 		try {
-			Process process = builder.start();
+			Process process = builder.start();			
 			process.waitFor();
 		} catch (IOException | InterruptedException e1) {
 			e1.printStackTrace();
+			load.dispose();
 		}
-		
 		return null;
 	}
-	
+
+	/** Remove the .temporary.avi that was created the last time a file was created */
 	private void removeTemp() {
 		String cmd = "rm VIDIVOXmedia/.temporary.avi";
 		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
@@ -72,7 +73,8 @@ public class BackGroundMakeFile extends SwingWorker<Void, Void> {
 		}
 	}
 	
-	// Upon completion we want the altered video to play
+	/** Upon completion of the video being created we want the altered video to play */
+	@Override
 	public void done(){
 		//play the video and dispose the load screen
 		videoPath = "VIDIVOXmedia/.temporary.avi";

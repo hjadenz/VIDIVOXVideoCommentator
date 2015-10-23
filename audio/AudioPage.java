@@ -13,47 +13,33 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.StyledDocument;
 
-import backgroundTasks.BackGroundSpeech;
+import audio.addToVideo.AddAudio;
+import backgroundTasks.BackgroundSpeech;
 
-import javax.swing.JTextField;
-
-// This class is required to set a characted limit for the text field on the audio screen
-class JTextFieldLimit extends PlainDocument {
-	  private int limit;
-	  JTextFieldLimit(int limit) {
-		  super();
-		  this.limit = limit;
-	  }
-
-	  JTextFieldLimit(int limit, boolean upper) {
-		  super();
-		  this.limit = limit;
-	  }
-
-	  public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
-		  if (str == null) {
-			  return;
-		  }
-
-		  if ((getLength() + str.length()) <= limit) {
-			  super.insertString(offset, str, attr);
-		  }
-	  }
-}
+/**
+ * 
+ * @author Hannah Sampson
+ */
 
 
+@SuppressWarnings("serial")
 public class AudioPage extends JFrame {
 
-	private JPanel contentPane;
-	private JPanel buttonPane;
+	private JPanel contentPane = new JPanel();
+	private JPanel buttonPane = new JPanel();
+	private JPanel titlePane = new JPanel();
 	private AudioPage frame = this;
-	private JTextField text;
-	BackGroundSpeech bgs = null;
+	
+	private JTextPane text;
+	private AbstractDocument document;
+	static final int MAX_CHARACTERS = 150;
+	
+	BackgroundSpeech speech = null;
 	private List<Integer> pids = new ArrayList<Integer>();
 
 	/**
@@ -66,37 +52,46 @@ public class AudioPage extends JFrame {
             public void windowClosing(WindowEvent e) {
             	// If the window is closed the preview stops
 				// festival processes are cancelled
-				if(bgs != null){
-					bgs.cancel(true);
+				if(speech != null){
+					speech.cancel(true);
 				}
                 System.exit(0);
             }
         });
 		setBounds(100, 100, 300, 250);
-		contentPane = new JPanel();
+
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout());
 		
+		titlePane.setLayout(new BorderLayout());
+		
 		JLabel title = new JLabel("Please enter your commentary:");
 		title.setFont(new Font("Tahoma", Font.BOLD, 14));
-		contentPane.add(title, BorderLayout.NORTH);
+		titlePane.add(title, BorderLayout.NORTH);
 		
 		// 150 characters represents the approximate length of a compound sentence of reasonable length. Any sentence
 		// longer than this can easily be (and probably should be) split into multiple smaller sentences.
 		JLabel limit = new JLabel("Note there is a max of 150 characters");
 		limit.setFont(new Font("Tahoma", Font.BOLD, 10));
-		contentPane.add(limit, BorderLayout.CENTER);
+		titlePane.add(limit, BorderLayout.CENTER);
 		
-		text = new JTextField();
+		contentPane.add(titlePane, BorderLayout.NORTH);
+		
+		text = new JTextPane();
 		text.setBounds(25, 90, 230, 30);
 		contentPane.add(text, BorderLayout.CENTER);
-		text.setColumns(10);
-		text.setDocument(new JTextFieldLimit(150));
+		
+		// Note this method to create a character limit for the text pane comes from
+		// docs.oracle.come/javase/tutorial/uiswing/components/generaltext.html#filter
+		StyledDocument style = text.getStyledDocument();
+		if (style instanceof AbstractDocument) {
+			document = (AbstractDocument)style;
+			document.setDocumentFilter(new JTextAreaDocumentFilter(MAX_CHARACTERS));
+		}
+		
 		// Indicates where the user can type text to make it easier
 		text.setText("Add text here ...");
-		
-		buttonPane = new JPanel();
 		
 		// The preview button takes the text the user has typed and plays the commentary out loud so that they can 
 		// check it is what they want
@@ -104,8 +99,8 @@ public class AudioPage extends JFrame {
 		preview.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 					String removedText = text.getText().replaceAll("\'|\"", "");
-					bgs = new BackGroundSpeech(removedText, frame);
-					bgs.execute();
+					speech = new BackgroundSpeech(removedText, frame);
+					speech.execute();
 			}
 		});
 		preview.setFont(new Font("Tahoma", Font.BOLD, 10));
@@ -130,8 +125,8 @@ public class AudioPage extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				// If the cancel button is pressed the preview stops
 				// festival processes are cancelled
-				if(bgs != null){
-					bgs.cancel(true);
+				if(speech != null){
+					speech.cancel(true);
 				}
 				frame.dispose();
 			}

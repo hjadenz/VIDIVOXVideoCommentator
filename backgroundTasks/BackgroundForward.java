@@ -2,7 +2,7 @@ package backgroundTasks;
 
 import javax.swing.SwingWorker;
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
-import video.StartPage;
+import video.VIDIVOXstart;
 
 /**
  * This class fastforwards the video without freezing the GUI, using SwingWorker
@@ -11,10 +11,10 @@ import video.StartPage;
 public class BackgroundForward extends SwingWorker<Void, Void> {
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	long time;
-	private StartPage startPage;
+	private VIDIVOXstart startPage;
 	private boolean isMuted;
 	
-	public BackgroundForward(StartPage startPage, EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
+	public BackgroundForward(VIDIVOXstart startPage, EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
 		this.startPage = startPage;
 		this.mediaPlayerComponent = mediaPlayerComponent;
 		this.time = time/1000;

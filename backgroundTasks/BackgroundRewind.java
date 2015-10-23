@@ -3,7 +3,7 @@ package backgroundTasks;
 import javax.swing.SwingWorker;
 
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
-import video.StartPage;
+import video.VIDIVOXstart;
 
 
 /**
@@ -14,10 +14,10 @@ import video.StartPage;
 public class BackgroundRewind extends SwingWorker<Void, Void> {
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private long time;
-	private StartPage startPage;
+	private VIDIVOXstart startPage;
 	private boolean isMuted;
 	
-	public BackgroundRewind(StartPage startPage, EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
+	public BackgroundRewind(VIDIVOXstart startPage, EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
 		this.startPage = startPage;
 		this.mediaPlayerComponent = mediaPlayerComponent;
 		this.time = time/1000;

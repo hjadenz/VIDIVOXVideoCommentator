@@ -1,15 +1,17 @@
 package backgroundTasks;
-// This is the logic for creating a file that has the selected video with the soundtrack removed and the selected audio
-// added instead
 
 import java.io.IOException;
-
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
-import video.StartPage;
+import video.VIDIVOXstart;
 
-public class BackgroundPreview extends SwingWorker<Void, Void> {
+/**
+ * 
+ * @author Hannah Sampson
+ */
+
+public class BackgroundPreview extends SwingWorker<Void, Integer> {
 	private String videoPath;
 	private String audioPath;
 	private JFrame load;
@@ -19,7 +21,7 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 	private String seconds;
 	private int time;
 	
-	private StartPage start;
+	private VIDIVOXstart start;
 	
 	public BackgroundPreview(String videoPath, String audioPath, JFrame load, String videoTitle, int position, int time){
 		this.videoPath = videoPath;
@@ -52,7 +54,7 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 		}
 	}
 	
-	public void addReferenceToStart(StartPage start) {
+	public void addReferenceToStart(VIDIVOXstart start) {
 		this.start = start;
 	}
 	
@@ -71,9 +73,19 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 			process.waitFor();
 		} catch (IOException | InterruptedException e1) {
 			e1.printStackTrace();
+			load.dispose();
 		}
 		
 		return null;
+	}
+	
+	// Upon completion we want the altered video to play
+	@Override
+	public void done(){
+		//play the video and dispose the load screen
+		videoPath = "VIDIVOXmedia/.preview.avi";
+		start.start(videoTitle, videoPath);
+		load.dispose();
 	}
 	
 	private void removeTemp() {
@@ -84,13 +96,5 @@ public class BackgroundPreview extends SwingWorker<Void, Void> {
 		} catch (IOException e2) {
 			e2.printStackTrace();
 		}
-	}
-	
-	// Upon completion we want the altered video to play
-	public void done(){
-		//play the video and dispose the load screen
-		videoPath = "VIDIVOXmedia/.preview.avi";
-		start.start(videoTitle, videoPath);
-		load.dispose();
 	}
 }

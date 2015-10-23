@@ -1,4 +1,4 @@
-package audio;
+package audio.addToVideo;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
@@ -13,7 +13,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -21,7 +20,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSliderUI;
@@ -31,16 +29,22 @@ import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.audio.exceptions.CannotReadException;
 import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
-import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagException;
 
+import audio.AudioPage;
+import audio.LoadingFrame;
 import backgroundTasks.BackgroundPreview;
 
 import chooseFiles.FileChooser;
 
 import time.TimeLabel;
-import video.StartPage;
+import video.VIDIVOXstart;
 import video.storage.Media;
+
+/** AddAudio 
+ * 
+ * @author Hannah Sampson
+ */
 
 @SuppressWarnings("serial")
 public class AddAudio extends JFrame {
@@ -52,19 +56,19 @@ public class AddAudio extends JFrame {
 	private JPanel timePane;
 	private JPanel addPane;
 	
-	private JButton newCommentaryButton;
-	private JButton addAudioButton;
+	private JButton newCommentaryButton = new JButton("Create New mp3");
+	private JButton addAudioButton = new JButton("Add Created Audio");
 	
 	private JButton previewButton = new JButton("Preview");
 	private String audioPath;
-	private String audioName;
 	private JButton addButton = new JButton("Add");
 	private JButton cancelButton = new JButton("Cancel");
 	
 	private JLabel audioLabel;
 	private JCheckBox addAtPointer;
+	private int positionToAddAt;
 	
-	private StartPage start;
+	private VIDIVOXstart start;
 	private JSlider timeSlider;
 	private int time;
 	
@@ -74,7 +78,7 @@ public class AddAudio extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public AddAudio(final StartPage start) {
+	public AddAudio(final VIDIVOXstart start) {
 		setBounds(100, 100, 500, 250);
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		contentPane = new JPanel();
@@ -118,14 +122,13 @@ public class AddAudio extends JFrame {
 			public void itemStateChanged(ItemEvent e) {
 				toggleTimeEnabled();
 			}
-
 			private void toggleTimeEnabled() {
 				if (timeSlider.isEnabled()) {
 					timeSlider.setEnabled(false);
 				} else {
 					timeSlider.setEnabled(true);
+					positionToAddAt = start.getSliderPosition();
 				}
-				
 			}
 		});
 		
@@ -190,7 +193,17 @@ public class AddAudio extends JFrame {
 		addButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	Media m = new Media(audioPath, timeSlider.getValue(), audioLabel.getText());
+				if (addAtPointer.isSelected()) {
+					positionToAddAt = start.getSliderPosition();
+				} else {
+					positionToAddAt = timeSlider.getValue();
+				}
+				
+				if ((positionToAddAt + time) > start.getLengthOfVideo()) {
+					positionToAddAt = start.getLengthOfVideo() - time;
+				}
+		    	
+		    	Media m = new Media(audioPath, positionToAddAt, audioLabel.getText());
 		    	start.addAudio(m);
 		    	start.merge();
 		    	frame.dispose();
@@ -242,8 +255,18 @@ public class AddAudio extends JFrame {
 				// Get the total time of the selected audio file (make sure its up to date)
 				audioFileTime();
 				
+				if (addAtPointer.isSelected()) {
+					positionToAddAt = start.getSliderPosition();
+				} else {
+					positionToAddAt = timeSlider.getValue();
+				}
+				
+				if ((positionToAddAt + time) > start.getLengthOfVideo()) {
+					positionToAddAt = start.getLengthOfVideo() - time;
+				}
+				
 				// Run the preview of the audio through the original frame
-				BackgroundPreview makeFile = new BackgroundPreview(start.getOriginalVideoPath(), audioPath, lf, start.getVideoTitle(), timeSlider.getValue(), time);
+				BackgroundPreview makeFile = new BackgroundPreview(start.getOriginalVideoPath(), audioPath, lf, start.getVideoTitle(), positionToAddAt, time);
 				makeFile.addReferenceToStart(start);
 				makeFile.execute();
 		    }

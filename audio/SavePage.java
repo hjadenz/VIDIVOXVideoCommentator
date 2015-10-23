@@ -14,8 +14,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import audio.addToVideo.AddAudio;
+
 import video.SaveVideo;
-import video.StartPage;
+import video.VIDIVOXstart;
 
 public class SavePage extends JFrame {
 
@@ -65,7 +67,9 @@ public class SavePage extends JFrame {
 		text.setBounds(25, 100, 230, 30);
 		contentPane.add(text);
 		text.setColumns(10);
-		text.setDocument(new JTextFieldLimit(50));
+		
+		// TODO
+		
 		text.setText("My"+mediaType+"File");
 		
 		JButton confirm = new JButton("Confirm");

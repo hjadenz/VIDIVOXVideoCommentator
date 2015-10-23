@@ -48,6 +48,7 @@ public class MediaList extends ArrayList<Media> {
 		return media.get(order).getName();
 	}
 
+	/** This method uses linux BASH functionality to get the length of a video file */
 	public int getLengthOfVideo() {
 		String cmd = "ffprobe " + this.getInitialVideoPath() + " -show_format 2>&1 | sed -n 's/duration=//p' ";
 		String line = null;
@@ -65,7 +66,10 @@ public class MediaList extends ArrayList<Media> {
 		return (int)Double.parseDouble(line);
 	}
 
-	// Edit the time value associated with a particular media object
+	/** Edit the time value associated with a particular media object 
+	 *  This is implemented so that the user can edit where a particular audio is placed in the video
+	 *  even after they have added it to the video
+	 */
 	public void editTime(int position, int time) {
 		media.get(position).setTime(time);
 	}

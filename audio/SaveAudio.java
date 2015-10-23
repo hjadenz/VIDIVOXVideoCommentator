@@ -2,7 +2,8 @@ package audio;
 
 import java.io.IOException;
 
-import backgroundTasks.BackGroundSaveAudio;
+import audio.addToVideo.AddAudio;
+import backgroundTasks.BackgroundSaveAudio;
 
 public class SaveAudio {
 	private String filename;
@@ -15,7 +16,7 @@ public class SaveAudio {
 
 	public void saveFile(AddAudio audio) {
 		// Note that saving the file like this will automatically overwrite the file
-		BackGroundSaveAudio bgsa = new BackGroundSaveAudio(inputText, filename);
+		BackgroundSaveAudio bgsa = new BackgroundSaveAudio(inputText, filename);
 		bgsa.execute();
 		
 		audio.copyPath("VIDIVOXmedia/"+filename+".mp3", filename);

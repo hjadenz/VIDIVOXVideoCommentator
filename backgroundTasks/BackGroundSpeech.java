@@ -7,12 +7,12 @@ import java.util.List;
 import javax.swing.SwingWorker;
 import audio.AudioPage;
 
-public class BackGroundSpeech extends SwingWorker<Void, Void> {
+public class BackgroundSpeech extends SwingWorker<Void, Void> {
 	private String removedText;
 	private AudioPage ap;
 	private boolean isSpeaking = true;
 	
-	public BackGroundSpeech(String removedText, AudioPage ap){
+	public BackgroundSpeech(String removedText, AudioPage ap){
 		this.removedText = removedText;
 		this.ap= ap;
 	}
@@ -56,7 +56,7 @@ public class BackGroundSpeech extends SwingWorker<Void, Void> {
 			String cmdKILL = "kill $(pstree -pA "+ i +"|sed 's/[+`-]\\+/\\n/g'|sed -n 's/.*(\\([0-9]\\+\\)).*/\\1/p')";
 			ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmdKILL);
 			try {
-				Process process = builder.start();
+				builder.start();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
