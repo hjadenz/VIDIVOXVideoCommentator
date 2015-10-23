@@ -12,7 +12,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import backgroundTasks.BackgroundSaveAudio;
+
 import audio.addToVideo.AddAudio;
+import audio.create.SavePage;
 
 import video.SaveVideo;
 
@@ -25,7 +28,7 @@ public class NameTakenPage extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public NameTakenPage(final String filename, final String input,final boolean saveAudio, final AddAudio audio) {
+	public NameTakenPage(final String filename, final String input,final boolean saveAudio, final AddAudio audio, final double speed) {
 		this.saveAudio = saveAudio;
 		if(saveAudio){
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -67,9 +70,8 @@ public class NameTakenPage extends JFrame {
 				//saving audio and videos are done differently, call the desired object depending on
 				//whether it's video or audio
 				if(saveAudio){
-					SaveAudio save = new SaveAudio(filename, input);
-					save.saveFile(audio);
-					
+					BackgroundSaveAudio saveAudio = new BackgroundSaveAudio(input, filename, speed, audio);
+					saveAudio.execute();
 				}else{
 					SaveVideo save = new SaveVideo(filename);
 					save.saveVideo();
@@ -88,7 +90,7 @@ public class NameTakenPage extends JFrame {
 		cancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				//creates the SavePage depending if video or audio
-				SavePage save = new SavePage(input,saveAudio, audio);
+				SavePage save = new SavePage(input,saveAudio, audio, speed);
 				save.setVisible(true);
 				frame.dispose();
 			}

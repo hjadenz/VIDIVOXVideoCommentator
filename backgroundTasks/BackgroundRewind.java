@@ -40,7 +40,7 @@ public class BackgroundRewind extends SwingWorker<Void, Void> {
 			}
 			//set the buttons to display the correct images
 			//and set booleans to the correct value
-			startPage.setPlayBtnText("Pause");
+			startPage.setPlayBtnText("||");
 			startPage.setIsRewinding(false);
 			// If the video was muted before the user pressed rewind the audio will still be muted when we play again
 			// Otherwise this turns the audio back on

@@ -37,7 +37,7 @@ public class BackgroundForward extends SwingWorker<Void, Void> {
 			}
 			//set the buttons to display the correct string
 			//and set booleans to the correct value
-			startPage.setPlayBtnText("Pause");
+			startPage.setPlayBtnText("||");
 			startPage.setIsFastForwarding(false);
 			// If the video was muted before the user starting fastforwarding: keep the video muted upon resuming
 			// Otherwise we want to unmute

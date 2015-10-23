@@ -27,11 +27,11 @@ import backgroundTasks.BackgroundMakeFile;
 import backgroundTasks.BackgroundForward;
 import backgroundTasks.BackgroundRewind;
 import backgroundTasks.UpdateSlider;
-import audio.AudioPage;
 import audio.LoadingFrame;
-import audio.SavePage;
 import audio.addToVideo.AddAudio;
 import audio.addToVideo.EditMediaTime;
+import audio.create.AudioPage;
+import audio.create.SavePage;
 
 import chooseFiles.FileChooser;
 
@@ -746,7 +746,7 @@ public class VIDIVOXstart {
 		    			mediaPlayerComponent.getMediaPlayer().pause();
 		    		}
 		    		// Note that this save doesn't require input text etc. as it is to save a video
-		    		SavePage save = new SavePage(null, false, null);
+		    		SavePage save = new SavePage(null, false, null, 0.0);
 		    		save.setVisible(true);
 		    		isSaved = true;
 		    	}

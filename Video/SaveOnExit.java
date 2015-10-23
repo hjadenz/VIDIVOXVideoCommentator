@@ -10,7 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import audio.SavePage;
+import audio.create.SavePage;
 
 /** This class is a frame that comes up when the user tries to exit the application and hasn't saved
  *  their most recent changes.
@@ -67,7 +67,7 @@ public class SaveOnExit extends JFrame {
 		saveButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	SavePage save = new SavePage(null, false, null);
+		    	SavePage save = new SavePage(null, false, null, 0.0);
 	    		save.setVisible(true);
 	    		frame.dispose();
 	    		start.setSaved(true);

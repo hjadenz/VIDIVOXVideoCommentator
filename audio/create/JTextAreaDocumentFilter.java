@@ -1,4 +1,4 @@
-package audio;
+package audio.create;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;

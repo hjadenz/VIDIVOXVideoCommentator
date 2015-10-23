@@ -1,4 +1,4 @@
-package audio;
+package audio.create;
 
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -14,6 +14,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import backgroundTasks.BackgroundSaveAudio;
+
+import audio.NameTakenPage;
 import audio.addToVideo.AddAudio;
 
 import video.SaveVideo;
@@ -25,20 +28,21 @@ public class SavePage extends JFrame {
 	private JFrame frame = this;
 	private boolean saveAudio;
 	private AddAudio audio;
+	private double speed;
+	private String inputText;
 
 	/**
 	 * Create the frame.
 	 */
-	public SavePage(final String inputText, final boolean saveAudio, AddAudio audio) {
+	public SavePage(final String inputText, boolean saveAudio, AddAudio audio, double speed) {
 		
 		this.audio = audio;
 		this.saveAudio = saveAudio;
+		this.speed = speed;
+		this.inputText = inputText;
 		
-		if(saveAudio){
-			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		}else{
-			setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		}
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		
 		setBounds(100, 100, 300, 250);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -68,8 +72,6 @@ public class SavePage extends JFrame {
 		contentPane.add(text);
 		text.setColumns(10);
 		
-		// TODO
-		
 		text.setText("My"+mediaType+"File");
 		
 		JButton confirm = new JButton("Confirm");
@@ -98,6 +100,13 @@ public class SavePage extends JFrame {
 		contentPane.add(cancel);
 	}
 	
+	/** Check whether the file you were trying to create already exists
+	 *  if it does, prompt the user to select whether they want to rename the file, or overwrite the
+	 *  existing one.
+	 * 
+	 * @param filename
+	 * @param inputText
+	 */
 	private void doesFileExist(String filename, String inputText) {
 		//figure out extension, depending on if audio or video
 		String mediaTypeExt;
@@ -111,15 +120,14 @@ public class SavePage extends JFrame {
 			process.waitFor();
 			//if taken, prompt the user to overwrite or not
 			if (process.exitValue() == 0) {
-				NameTakenPage taken = new NameTakenPage(filename, inputText,saveAudio, audio);
+				NameTakenPage taken = new NameTakenPage(filename, inputText,saveAudio, audio, speed);
 				taken.setVisible(true);
 				frame.dispose();
 			//filename is good, go and save the media
 			} else {
 				if(saveAudio){
-					SaveAudio save = new SaveAudio(filename, inputText);
-					save.saveFile(audio);
-
+					BackgroundSaveAudio saveAudio = new BackgroundSaveAudio(inputText, filename, speed, audio);
+					saveAudio.execute();
 				}else{
 					SaveVideo save = new SaveVideo(filename);
 					save.saveVideo();
