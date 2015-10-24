@@ -32,8 +32,8 @@ import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
 import org.jaudiotagger.tag.TagException;
 
 import audio.LoadingFrame;
-import audio.create.AudioPage;
-import backgroundTasks.BackgroundPreview;
+import audio.create.CreateNewAudio;
+import backgroundTasks.createFiles.CreatePreviewFile;
 
 import chooseFiles.FileChooser;
 
@@ -41,28 +41,30 @@ import time.TimeLabel;
 import video.VIDIVOXstart;
 import video.storage.Media;
 
-/** AddAudio 
+/** AddAudio is a frame that gives the user options to choose an audio to add to the selected video
+ * 	It contains a slider that lets the user change where the audio goes, and a checkbox that lets the 
+ *  user decide whether they want to use the slider or the video's current position
  * 
  * @author Hannah Sampson
  */
 
 @SuppressWarnings("serial")
-public class AddAudio extends JFrame {
+public class AddAudioToVideo extends JFrame {
 	
 	// Create the contentPanes to hold all the components -----------------------------------------------
-	private AddAudio frame = this;
+	private AddAudioToVideo frame = this;
 	private JPanel contentPanel = new JPanel();
 	private JPanel buttonPanel = new JPanel();
 	private JPanel optionPanel = new JPanel();
 	private JPanel timePanel = new JPanel();
 	private JPanel addPanel = new JPanel();
+	private JPanel finalPositionPanel = new JPanel();
 	
 	// Create buttons -----------------------------------------------------------------------------------
 	private JButton newCommentaryButton = new JButton("Create New mp3");
 	private JButton addAudioButton = new JButton("Add Created Audio");
 	
 	private JButton previewButton = new JButton("Preview");
-	private String audioPath;
 	private JButton addButton = new JButton("Add");
 	private JButton cancelButton = new JButton("Cancel");
 	
@@ -72,6 +74,9 @@ public class AddAudio extends JFrame {
 	private JCheckBox addAtPointer;
 	private int positionToAddAt;
 	
+	private TimeLabel labelPositionToAddAt = new TimeLabel();
+	private JLabel finalPositionLabel = new JLabel("Exact position the audio will be added: ");
+	
 	// Add the components that indicate what time the user will be adding the audio ---------------------
 	private VIDIVOXstart start;
 	private JSlider timeSlider;
@@ -79,10 +84,12 @@ public class AddAudio extends JFrame {
 	
 	private TimeLabel endTime = new TimeLabel();
 	private TimeLabel addTime = new TimeLabel();
+	
+	// The audio file that the user chooses -------------------------------------------------------------
+	private AudioFile audioFile;
+	private String audioPath;
 
-	/** 
-	 */
-	public AddAudio(final VIDIVOXstart start) {
+	public AddAudioToVideo(VIDIVOXstart s) {
 		setBounds(100, 100, 500, 250);
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		contentPanel = new JPanel();
@@ -90,11 +97,12 @@ public class AddAudio extends JFrame {
 		setContentPane(contentPanel);
 		contentPanel.setLayout(new BorderLayout());
 		
-		this.start = start;
+		this.start = s;
+		this.positionToAddAt = start.getSliderPosition();
 		
 		frame.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				start.createOriginalVideo();
+				start.merge();
 			}
 		});
 		
@@ -104,20 +112,25 @@ public class AddAudio extends JFrame {
 		createViewButtons();
 	}
 
-	private void setLengthOfSlider() {
+	/** Set the label that shows the user the maximum time they can add the audio, without going over
+	 *  the end of the video
+	 */
+	private void setLabelForLengthOfSlider() {
 		endTime.setTimeText(timeSlider.getMaximum());
 	}
-	
-	private void setSliderPositionNumber() {
+	/** Set the label to the left of the slider that shows the exact time the user has selected */
+	private void setPositionNumberLabel() {
 		addTime.setTimeText(timeSlider.getValue());
 	}
 
+	/** Add the details of the chosen audio to the frame so that the user can easily see what the choice is */
 	public void copyPath(String path, String name) {
 		this.audioPath = path;
 		this.audioLabel.setText(name);
 		this.setPreviewEnabled();
 	}
 
+	/** If an audio has been selected, enable the preview button */
 	private void setPreviewEnabled() {
 		if (audioLabel.getText() == "") {
 			previewButton.setEnabled(false);
@@ -129,10 +142,9 @@ public class AddAudio extends JFrame {
 		
 	}
 	
-	/** Given a particular audio file, work our its duration */
+	/** Given a particular audio file, work out it's duration */
 	public void audioFileTime() {
 		//Calculate the total time of the selected audio file
-		AudioFile audioFile = null;
 		try {
 			audioFile = AudioFileIO.read(new File(audioPath));
 		} catch (CannotReadException | IOException | TagException | ReadOnlyFileException | InvalidAudioFrameException e1) {
@@ -150,8 +162,8 @@ public class AddAudio extends JFrame {
 		int videoLength = this.start.getLengthOfVideo();
 		
 		timeSlider.setMaximum(videoLength - time);
-		setLengthOfSlider();
-		setSliderPositionNumber();
+		setLabelForLengthOfSlider();
+		setPositionNumberLabel();
 	}
 	
 	
@@ -177,7 +189,7 @@ public class AddAudio extends JFrame {
 		newCommentaryButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	AudioPage audio = new AudioPage(frame);
+		    	CreateNewAudio audio = new CreateNewAudio(frame, start);
 		    	audio.setVisible(true);
 		    }
 		});
@@ -188,10 +200,7 @@ public class AddAudio extends JFrame {
 		addAudioButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	FileChooser chooseAudio = new FileChooser();
-		    	chooseAudio.addReferenceToStart(start);
-		    	chooseAudio.showFileChooser(false);
-		    	chooseAudio.setAudioPath(frame);
+		    	new FileChooser(false, null, frame);
 		    }
 		});
 		addAudioButton.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -218,9 +227,10 @@ public class AddAudio extends JFrame {
 			private void toggleTimeEnabled() {
 				if (timeSlider.isEnabled()) {
 					timeSlider.setEnabled(false);
+					labelPositionToAddAt.setTimeText(positionToAddAt);
 				} else {
 					timeSlider.setEnabled(true);
-					positionToAddAt = start.getSliderPosition();
+					labelPositionToAddAt.setTimeText(timeSlider.getValue());
 				}
 			}
 		});
@@ -232,7 +242,13 @@ public class AddAudio extends JFrame {
 		// Add the labels that will hold the time value at which the user is adding their audio		
 		timePanel.add(endTime, BorderLayout.EAST);
 		timePanel.add(addTime, BorderLayout.WEST);
-		setLengthOfSlider();
+		setLabelForLengthOfSlider();
+		
+		// Set up the label that holds the final time that the audio will be added at
+		finalPositionPanel.add(finalPositionLabel);
+		finalPositionPanel.add(labelPositionToAddAt);
+		
+		timePanel.add(finalPositionPanel, BorderLayout.SOUTH);
 		
 		// Add the ability to update the label that states the time the slider is on
 		timeSlider.addMouseListener(new MouseListener() {
@@ -245,7 +261,9 @@ public class AddAudio extends JFrame {
 				int value = sliderUI.valueForXPosition(p.x);
 				
 				timeSlider.setValue(value);
-				setSliderPositionNumber();
+				setPositionNumberLabel();
+				// If the slider is enabled, set the value to be the value on the slider
+				labelPositionToAddAt.setTimeText(timeSlider.getValue());
 			}
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -253,7 +271,8 @@ public class AddAudio extends JFrame {
 			// When the slider is released this is the position that the video goes to
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				setSliderPositionNumber();
+				setPositionNumberLabel();
+				labelPositionToAddAt.setTimeText(timeSlider.getValue());
 			}
 			@Override
 			public void mouseEntered(MouseEvent e) {
@@ -291,21 +310,23 @@ public class AddAudio extends JFrame {
 				// Get the total time of the selected audio file (make sure its up to date)
 				audioFileTime();
 				
+				int position = 0;
+				
 				if (addAtPointer.isSelected()) {
-					positionToAddAt = start.getSliderPosition();
+					position = positionToAddAt;
 				} else {
-					positionToAddAt = timeSlider.getValue();
+					position = timeSlider.getValue();
 				}
 				
 				// Make sure that the audio won't go over the end of the video
-				if ((positionToAddAt + time) > start.getLengthOfVideo()) {
-					positionToAddAt = start.getLengthOfVideo() - time;
+				if ((position + time) > start.getLengthOfVideo()) {
+					position = start.getLengthOfVideo() - time;
 				}
 					
 				// Run the preview of the audio through the original frame
-				BackgroundPreview makeFile = new BackgroundPreview(start.getOriginalVideoPath(), audioPath, lf, start.getVideoTitle(), positionToAddAt, time);
-				makeFile.addReferenceToStart(start);
-				makeFile.execute();
+				CreatePreviewFile preview = new CreatePreviewFile(start.getOriginalVideoPath(), audioPath, lf, start.getVideoTitle(), position, time);
+				preview.addReferenceToStart(start);
+				preview.execute();
 		    }
 		});
 		previewButton.setFont(new Font("Tahoma", Font.BOLD, 14));
@@ -317,19 +338,22 @@ public class AddAudio extends JFrame {
 		addButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
+		    	
+		    	int position = 0;
+		    	
 				if (addAtPointer.isSelected()) {
-					positionToAddAt = start.getSliderPosition();
+					position = positionToAddAt;
 				} else {
-					positionToAddAt = timeSlider.getValue();
+					position = timeSlider.getValue();
 				}
 				
 				// Make sure that the audio won't go over the end of the video
-				if ((positionToAddAt + time) > start.getLengthOfVideo()) {
-					positionToAddAt = start.getLengthOfVideo() - time;
+				if ((position + time) > start.getLengthOfVideo()) {
+					position = start.getLengthOfVideo() - time;
 				}
 		    	
 				// Create a new media object that will be associated with the selected video
-		    	Media m = new Media(audioPath, positionToAddAt, audioLabel.getText());
+		    	Media m = new Media(audioPath, position, audioLabel.getText(), 50);
 		    	start.addAudio(m);
 		    	// Run the video with the newest changes in place
 		    	start.merge();
@@ -344,7 +368,7 @@ public class AddAudio extends JFrame {
 		cancelButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	start.createOriginalVideo();
+		    	start.merge();
 		    	frame.dispose();
 		    }
 		});

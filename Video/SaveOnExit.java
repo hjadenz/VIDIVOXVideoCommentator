@@ -10,7 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import audio.create.SavePage;
+import audio.create.SaveAudioOrVideo;
 
 /** This class is a frame that comes up when the user tries to exit the application and hasn't saved
  *  their most recent changes.
@@ -42,7 +42,7 @@ public class SaveOnExit extends JFrame {
 		
 		this.start = s;
 		
-		setBounds(200, 200, 300, 120);
+		setBounds(200, 200, 300, 100);
 		contentPanel.setLayout(new BorderLayout());
 		setContentPane(contentPanel);
 		
@@ -52,11 +52,10 @@ public class SaveOnExit extends JFrame {
 		titlePanel.add(question, BorderLayout.SOUTH);
 		contentPanel.add(titlePanel, BorderLayout.NORTH);
 		
-		buttonPanel.setLayout(new BorderLayout());
-		buttonPanel.add(saveButton, BorderLayout.WEST);
-		buttonPanel.add(exitButton, BorderLayout.CENTER);
-		buttonPanel.add(cancelButton, BorderLayout.EAST);
-		contentPanel.add(buttonPanel, BorderLayout.CENTER);
+		buttonPanel.add(saveButton);
+		buttonPanel.add(exitButton);
+		buttonPanel.add(cancelButton);
+		contentPanel.add(buttonPanel, BorderLayout.SOUTH);
 		
 		buttonPanel.setBorder(new EmptyBorder(5,5,5,5));
 		
@@ -67,7 +66,7 @@ public class SaveOnExit extends JFrame {
 		saveButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	SavePage save = new SavePage(null, false, null, 0.0);
+		    	SaveAudioOrVideo save = new SaveAudioOrVideo(null, null, false, null, 0.0);
 	    		save.setVisible(true);
 	    		frame.dispose();
 	    		start.setSaved(true);

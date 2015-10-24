@@ -6,7 +6,7 @@ import java.util.List;
 
 import javax.swing.SwingWorker;
 
-import audio.create.AudioPage;
+import audio.create.CreateNewAudio;
 
 /** This class sets up a festival process to run in the background when "preview" is pressed
  * 
@@ -14,11 +14,11 @@ import audio.create.AudioPage;
 
 public class BackgroundSpeech extends SwingWorker<Void, Void> {
 	private String text;
-	private AudioPage audio;
+	private CreateNewAudio audio;
 	private boolean isSpeaking = true;
 	private double stretch;
 	
-	public BackgroundSpeech(String text, AudioPage a, double s){
+	public BackgroundSpeech(String text, CreateNewAudio a, double s){
 		this.text = text;
 		this.audio= a;
 		this.stretch = s;

@@ -11,11 +11,13 @@ public class Media {
 	private String audioPath;
 	private int time;
 	private String audioName;
+	private int volume;
 	
-	public Media(String audioPath, int time, String audioName) {
+	public Media(String audioPath, int time, String audioName, int volume) {
 		this.audioPath = audioPath;
 		this.time = time;
 		this.audioName = audioName;
+		this.volume = volume;
 	}
 	
 	// Return values associated with media file
@@ -28,9 +30,15 @@ public class Media {
 	public String getName() {
 		return audioName;
 	}
+	public int getVolume() {
+		return volume;
+	}
 
 	// Set values associated with media file (used when editing added audio)
 	public void setTime(int time) {
 		this.time = time;		
+	}
+	public void setVolume(int volume) {
+		this.volume = volume;
 	}
 }

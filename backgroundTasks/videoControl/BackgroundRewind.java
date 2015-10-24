@@ -1,9 +1,7 @@
-package backgroundTasks;
+package backgroundTasks.videoControl;
 
 import javax.swing.SwingWorker;
-
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
-import video.VIDIVOXstart;
 
 
 /**
@@ -14,11 +12,9 @@ import video.VIDIVOXstart;
 public class BackgroundRewind extends SwingWorker<Void, Void> {
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private long time;
-	private VIDIVOXstart startPage;
 	private boolean isMuted;
 	
-	public BackgroundRewind(VIDIVOXstart startPage, EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
-		this.startPage = startPage;
+	public BackgroundRewind(EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
 		this.mediaPlayerComponent = mediaPlayerComponent;
 		this.time = time/1000;
 		this.isMuted = isMuted;
@@ -38,10 +34,6 @@ public class BackgroundRewind extends SwingWorker<Void, Void> {
 					break;
 				}
 			}
-			//set the buttons to display the correct images
-			//and set booleans to the correct value
-			startPage.setPlayBtnText("||");
-			startPage.setIsRewinding(false);
 			// If the video was muted before the user pressed rewind the audio will still be muted when we play again
 			// Otherwise this turns the audio back on
 			if (isMuted == false) {

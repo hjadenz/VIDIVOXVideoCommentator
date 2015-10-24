@@ -19,22 +19,27 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.StyledDocument;
 
-import audio.addToVideo.AddAudio;
+import video.VIDIVOXstart;
+
+import audio.addToVideo.AddAudioToVideo;
 import backgroundTasks.BackgroundSpeech;
 
-/**	
+/**	CreateNewAudio is the frame that lets the user add text for festival to speak (preview) and create 
+ * 	audio files from (.wav to .mp3)
+ * 
+ * 	It contains a textPane that has a character limit of 150 characters, as well as the added festival
+ *  functionality that lets the user pick a speed for the speech
  * 
  * @author Hannah Sampson
  */
 
-
 @SuppressWarnings("serial")
-public class AudioPage extends JFrame {
+public class CreateNewAudio extends JFrame {
 
 	private JPanel contentPanel = new JPanel();
 	private JPanel buttonPanel = new JPanel();
 	private JPanel titlePanel = new JPanel();
-	private AudioPage frame = this;
+	private CreateNewAudio frame = this;
 	private JPanel speedPanel = new JPanel();
 	private JPanel textPanel = new JPanel();
 	
@@ -55,11 +60,12 @@ public class AudioPage extends JFrame {
 	// Set speed to default speed
 	private double speed = 1.0;
 	
-	private AddAudio audio;
+	private AddAudioToVideo audio;
+	private VIDIVOXstart start;
 
 	/** This frame allows the user to add text, play this text back, and change the speed of the text
 	 */
-	public AudioPage(AddAudio audio) {
+	public CreateNewAudio(AddAudioToVideo audio, VIDIVOXstart start) {
 		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override
@@ -72,9 +78,10 @@ public class AudioPage extends JFrame {
                 frame.dispose();
             }
         });
-		setBounds(100, 100, 300, 250);
+		setBounds(100, 100, 300, 200);
 		
 		this.audio = audio;
+		this.start = start;
 
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPanel);
@@ -87,6 +94,7 @@ public class AudioPage extends JFrame {
 		contentPanel.add(textPanel, BorderLayout.CENTER);
 	}
 	
+	// PIDS associated with the festival speech
 	public void pidsAdd(int i){
 		pids.add(i);
 	}
@@ -129,7 +137,7 @@ public class AudioPage extends JFrame {
 		// 150 characters represents the approximate length of a compound sentence of reasonable length. Any sentence
 		// longer than this can easily be (and probably should be) split into multiple smaller sentences.
 		JLabel limit = new JLabel("Note there is a max of 150 characters");
-		limit.setFont(new Font("Tahoma", Font.BOLD, 10));
+		limit.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		titlePanel.add(limit, BorderLayout.CENTER);
 		
 		contentPanel.add(titlePanel, BorderLayout.NORTH);
@@ -163,6 +171,7 @@ public class AudioPage extends JFrame {
 		preview.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				speed = 4.0 - ((double)speedSlider.getValue() / 10);
+				// Remove the characters that will cause issues in the BASH process
 				String removedText = text.getText().replaceAll("\'|\"", "");
 					speech = new BackgroundSpeech(removedText, frame, speed);
 					speech.execute();
@@ -176,8 +185,9 @@ public class AudioPage extends JFrame {
 		save.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				speed = 4.0 - ((double)speedSlider.getValue() / 10);
+				// Remove the characters that will cause issues in the BASH process
 				String removedText = text.getText().replaceAll("\'|\"", "");
-				SavePage save = new SavePage(removedText,true, audio, speed);
+				SaveAudioOrVideo save = new SaveAudioOrVideo(start, removedText,true, audio, speed);
 				save.setVisible(true);
 				frame.dispose();
 			}

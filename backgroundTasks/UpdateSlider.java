@@ -1,14 +1,13 @@
 package backgroundTasks;
 
 import javax.swing.SwingWorker;
+import video.VIDIVOXstart;
 
 /** This class updates the slider contained on the start page (connected to the video player) and
  *  constantly checks (on a different thread) whether the slider need to be updated
  *  
  *  @author Hannah Sampson
  */
-
-import video.VIDIVOXstart;
 
 public class UpdateSlider extends SwingWorker<Void, Void> {
 	

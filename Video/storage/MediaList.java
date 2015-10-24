@@ -18,6 +18,8 @@ public class MediaList extends ArrayList<Media> {
 	private ArrayList<Media> media = this;
 	private String initialName;
 	private String initialPath;
+	private int videoLength;
+	private int originalVolume = 50;
 	
 	/**Add the details of the original video to the MediaList component
 	 * 
@@ -27,6 +29,7 @@ public class MediaList extends ArrayList<Media> {
 	public void addInitial(String videoName, String videoPath) {
 		this.initialName = videoName;
 		this.initialPath = videoPath;
+		this.videoLength = calculateLengthOfVideo();
 	}
 
 	// Return details of the original video
@@ -35,6 +38,9 @@ public class MediaList extends ArrayList<Media> {
 	}
 	public String getInitialVideoName() {
 		return initialName;
+	}
+	public int getSoundtrackVolume() {
+		return originalVolume;
 	}
 	
 	// Return the time and path associated with a particular added audio
@@ -47,9 +53,16 @@ public class MediaList extends ArrayList<Media> {
 	public String getAudioName(int order) {
 		return media.get(order).getName();
 	}
+	public int getAudioVolume(int order) {
+		return media.get(order).getVolume();
+	}
+	public int getLengthOfVideo() {
+		return videoLength;
+	}
+	
 
 	/** This method uses linux BASH functionality to get the length of a video file */
-	public int getLengthOfVideo() {
+	public int calculateLengthOfVideo() {
 		String cmd = "ffprobe " + this.getInitialVideoPath() + " -show_format 2>&1 | sed -n 's/duration=//p' ";
 		String line = null;
 		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
@@ -72,5 +85,8 @@ public class MediaList extends ArrayList<Media> {
 	 */
 	public void editTime(int position, int time) {
 		media.get(position).setTime(time);
+	}
+	public void editSoundtrackVolume(int volume) {
+		originalVolume = volume;
 	}
 }

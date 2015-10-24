@@ -1,8 +1,7 @@
-package backgroundTasks;
+package backgroundTasks.videoControl;
 
 import javax.swing.SwingWorker;
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
-import video.VIDIVOXstart;
 
 /**
  * This class fastforwards the video without freezing the GUI, using SwingWorker
@@ -11,11 +10,9 @@ import video.VIDIVOXstart;
 public class BackgroundForward extends SwingWorker<Void, Void> {
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	long time;
-	private VIDIVOXstart startPage;
 	private boolean isMuted;
 	
-	public BackgroundForward(VIDIVOXstart startPage, EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
-		this.startPage = startPage;
+	public BackgroundForward(EmbeddedMediaPlayerComponent mediaPlayerComponent,long time, boolean isMuted){
 		this.mediaPlayerComponent = mediaPlayerComponent;
 		this.time = time/1000;
 		this.isMuted = isMuted;
@@ -35,10 +32,6 @@ public class BackgroundForward extends SwingWorker<Void, Void> {
 					break;
 				}
 			}
-			//set the buttons to display the correct string
-			//and set booleans to the correct value
-			startPage.setPlayBtnText("||");
-			startPage.setIsFastForwarding(false);
 			// If the video was muted before the user starting fastforwarding: keep the video muted upon resuming
 			// Otherwise we want to unmute
 			if (isMuted == false) {

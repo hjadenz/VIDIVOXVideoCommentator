@@ -14,24 +14,26 @@ import java.io.File;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSliderUI;
 
-import backgroundTasks.BackgroundMakeFile;
-import backgroundTasks.BackgroundForward;
-import backgroundTasks.BackgroundRewind;
 import backgroundTasks.UpdateSlider;
+import backgroundTasks.createFiles.CreateVideoFile;
+import backgroundTasks.videoControl.BackgroundForward;
+import backgroundTasks.videoControl.BackgroundRewind;
 import audio.LoadingFrame;
-import audio.addToVideo.AddAudio;
+import audio.addToVideo.AddAudioToVideo;
 import audio.addToVideo.EditMediaTime;
-import audio.create.AudioPage;
-import audio.create.SavePage;
+import audio.create.CreateNewAudio;
+import audio.create.SaveAudioOrVideo;
 
 import chooseFiles.FileChooser;
 
@@ -41,6 +43,7 @@ import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.discovery.NativeDiscovery;
 import uk.co.caprica.vlcj.player.MediaPlayer;
 import uk.co.caprica.vlcj.player.MediaPlayerEventAdapter;
+import video.storage.FestivalOptions;
 import video.storage.Media;
 import video.storage.MediaList;
 
@@ -56,13 +59,17 @@ import video.storage.MediaList;
 public class VIDIVOXstart {
 
 	// Panels that contain all the buttons and components for the frame ---------------------------------
-	private static VIDIVOXstart startPage;
+	private static VIDIVOXstart start;
 	private JPanel contentPanel = new JPanel();
 	private JPanel videoPanel = new JPanel();
 	private JPanel selectionPanel = new JPanel();
 	private JPanel leftHandPanel = new JPanel();
 	private JPanel audioPanel = new JPanel();
+	
+	private JPanel videoControlPanel = new JPanel();
 	private JPanel buttonPanel = new JPanel();
+	private JPanel soundPanel = new JPanel();
+	
 	private JPanel mergeButtonsPanel = new JPanel();
 	private JPanel sliderPanel = new JPanel();
 	private JPanel audioFilesPanel = new JPanel();
@@ -70,7 +77,6 @@ public class VIDIVOXstart {
 	private JFrame frame;
 	
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
-	private PositionSlider positionSlider;
 
 	// Buttons ------------------------------------------------------------------------------------------
 	private JButton selectVideo = new JButton("Select Video");
@@ -83,6 +89,10 @@ public class VIDIVOXstart {
 	private JButton fastForwardButton = new JButton(">>");
 	private JButton muteButton = new JButton("Mute");
 	private JButton saveButton = new JButton("Save");
+	
+	private JLabel soundLevel = new JLabel("100%");
+	private JSlider soundSlider = new JSlider(0, 100, 100);
+	private JLabel soundLabel = new JLabel("Sound");
 
 	// States of the video ------------------------------------------------------------------------------
 	private boolean isRewinding = false;
@@ -113,7 +123,7 @@ public class VIDIVOXstart {
 	private TimeLabel positionTime = new TimeLabel();
 	// Set the length of the video to be 60 seconds by default
 	private int lengthOfVideo = 60;
-	
+	private PositionSlider positionSlider;
 	
 	
 	/** This initial frame holds the video player, all the buttons that control the video playback
@@ -122,11 +132,11 @@ public class VIDIVOXstart {
 	 *  All buttons apart from "select video" and "create commentary" are greyed out upon starting to
 	 *  enforce that the user needs to select a video before being able to try edit or play anything
 	 */
-	public VIDIVOXstart(final String videoTitle, final String videoPath) {
+	public VIDIVOXstart(final String vt, final String vp) {
 		
-		VIDIVOXstart.startPage = this;
-		this.videoTitle = videoTitle;
-		this.videoPath = videoPath;
+		VIDIVOXstart.start = this;
+		this.videoTitle = vt;
+		this.videoPath = vp;
 		
         frame = new JFrame("VIDIVOX");
         frame.setBounds(100, 100, 1000, 550);
@@ -142,13 +152,12 @@ public class VIDIVOXstart {
             			mediaPlayerComponent.getMediaPlayer().pause();
             		}
             		
-            		SaveOnExit save = new SaveOnExit(startPage);
+            		SaveOnExit save = new SaveOnExit(start);
             		save.setVisible(true);
             		
             	} else {
             		//releases media component and associated native resources upon closing the window
-                    mediaPlayerComponent.release();
-                    System.exit(0);
+                    releaseMediaPlayer();
             	}
             }
         });
@@ -200,7 +209,18 @@ public class VIDIVOXstart {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                    	startPage.createOriginalVideo();
+                    	// Before replaying, the thread waits for one second to give the media player
+                    	// time to play properly (crashes otherwise)
+                    	try {
+                    		Thread.sleep(1000);
+                    	} catch (InterruptedException e) {
+                    		Thread.currentThread().interrupt();
+                    	}
+                    	
+                    	// However if what was playing was just a preview, it won't play again
+                    	if (videoPath != "VIDIVOXmedia/.preview.avi") {
+                    		start.runPlayer();
+                    	}
                     }
                 });
             } 
@@ -228,9 +248,16 @@ public class VIDIVOXstart {
 		mediaPlayerComponent.getMediaPlayer().mute(false);
 	}
 	
+	// --------------------------------------------------------------------------------------------------
+	// Methods to do with the application being exited
+	// --------------------------------------------------------------------------------------------------
 	
 	/** This method releases the media player properly when closing the application */
 	public void releaseMediaPlayer() {
+		if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+			mediaPlayerComponent.getMediaPlayer().stop();
+		}
+		
 		//releases media component and associated native resources upon closing the window
         mediaPlayerComponent.release();
         System.exit(0);
@@ -242,6 +269,9 @@ public class VIDIVOXstart {
 		isSaved = save;
 	}
 	
+	// --------------------------------------------------------------------------------------------------
+	// Methods to do with the video running 
+	// --------------------------------------------------------------------------------------------------
 	
 	/** Run player enables all of the video manipulation buttons and runs the video itself. */
 	public void runPlayer() {
@@ -251,26 +281,55 @@ public class VIDIVOXstart {
     	rewindButton.setEnabled(true);
     	fastForwardButton.setEnabled(true);
     	addAudioButton.setEnabled(true);
-    	optionsButton.setEnabled(true);
     	playAndPauseButton.setEnabled(true);
     	positionSlider.setEnabled(true);
     	
-    	startPage.setPlayBtnText("||");
+    	playAndPauseButton.setText("||");
 	}
-	
-	// When the video is started it is run from the current frame
+	/** When the video is started it is run from the current frame */
 	public void start(final String videoTitle, final String videoPath){
         new NativeDiscovery().discover();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                startPage.setStartPage(videoTitle, videoPath);
-                startPage.runPlayer();
+                start.setStartPage(videoTitle, videoPath);
+                start.runPlayer();
             }
         });
-	}	
+	}
+	/** When the merge button is pressed, any changes that the user has made to the video, and it's 
+	 * list of audio files is applied, and this new video is played
+	 */
+	public void merge() {
+		//show loading screen so user knows something is happening
+		LoadingFrame lf  = new LoadingFrame();
+		lf.setVisible(true);
+		
+		// If no audio files have been added, just play the original video
+		// Disable the save function and merge funtion as there is no change from the original file
+		
+		// Otherwise create the new video file with the changes to the audio files applied
+		if (audio.size() == 0) {
+			start.start(audio.getInitialVideoName(), audio.getInitialVideoPath());
+			mergeButton.setEnabled(false);
+			saveButton.setEnabled(false);
+			lf.dispose();
+			
+			// If the audio size is zero this means that all added audio has been removed, and it has
+			// gone back to the original video
+			isSaved = true;
+		} else {
+			CreateVideoFile merge = new CreateVideoFile(audio.getInitialVideoPath(), audio, lf, audio.getInitialVideoName());
+			merge.addReferenceToStart(start);
+			merge.execute();
+			isSaved = false;
+		}
+	}
 	
+	// --------------------------------------------------------------------------------------------------
 	// Logic for setting booleans for if the video is fastforwarding, rewinding or paused
+	// --------------------------------------------------------------------------------------------------
+	
 	public void setIsRewinding(boolean b){
 		isRewinding = b;
 	}
@@ -281,36 +340,54 @@ public class VIDIVOXstart {
 		isPaused = b;
 	}
 
+	// --------------------------------------------------------------------------------------------------
+	// Methods to do with toggling buttons, options, etc.
+	// --------------------------------------------------------------------------------------------------
+	
 	/** Depending on whether the video is playing or paused the text of the play/pause button changes */
 	public void toggleIsPaused(){
 		isPaused = (isPaused == true) ? false : true;
 		String newLabel;
 		newLabel = (isPaused) ? ">" : "||";
-		setPlayBtnText(newLabel);
+		playAndPauseButton.setText(newLabel);
 	}
 	
-	public void setPlayBtnText(String s){
-		playAndPauseButton.setText(s);
-	}
+	// --------------------------------------------------------------------------------------------------
+	// Getters and setters for video and audio details
+	// --------------------------------------------------------------------------------------------------
+	
+	// Video details
 	public String getVideoPath(){
 		return videoPath;
 	}
 	public String getVideoTitle(){
 		return videoTitle;
 	}
-	private void cancelRewindForward() {
-		if(isRewinding){
-			rewinding.cancel(true);
-		}
-		if(isFastForwarding){
-			fastForward.cancel(true);
-		}
+	public String getOriginalVideoPath() {
+		return audio.getInitialVideoPath();
 	}
-
+	/** This method returns the total time of the selected video file */
+	public int getLengthOfVideo() {
+		return lengthOfVideo;
+	}
 	/** Set the variables associated with the frame to the currently selected video */
 	public void setStartPage(String videoTitle, String videoPath) {
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
+	}
+	
+	// Slider details
+	public int getSliderPosition() {
+		return positionSlider.getValue();
+	}
+	/** This function sets the length of the slider to correspond to the length of the video
+	 * it is called every time a new video is played (as otherwise it stays constant
+	 * 
+	 * It also sets the far right label to the total time of the video
+	 */
+	public void setLengthOfSlider() {
+		positionSlider.setVideoLength(lengthOfVideo);
+		endTime.setTimeText(lengthOfVideo);
 	}
 	/** Take the value from the slider and use this to set the position of the video
 	 *  Called when a mouse event occurs for the slider
@@ -321,8 +398,6 @@ public class VIDIVOXstart {
 	}
 	/** As long as there is a video selected, use the "position" value to set the position of the
 	 * 	media player
-	 * 
-	 * @param position
 	 */
 	public void setPosition(float position) {
 		update.cancel(true);
@@ -335,8 +410,23 @@ public class VIDIVOXstart {
 		createUpdateSlider();
 	}
 	
+	private void cancelRewindForward() {
+		if(isRewinding){
+			rewinding.cancel(true);
+			isRewinding = false;
+			playAndPauseButton.setText("||");
+		}
+		if(isFastForwarding){
+			fastForward.cancel(true);
+			isFastForwarding = false;
+			playAndPauseButton.setText("||");
+		}
+	}
 	
-	
+	// --------------------------------------------------------------------------------------------------
+	// Creating new components and necessary files etc.
+	// --------------------------------------------------------------------------------------------------
+		
 	/** Create the media file that stores all the files created by the media player */
 	protected static void createDirectories() {
 		// Create a folder to store the media we want to be able to play or listen to
@@ -345,38 +435,6 @@ public class VIDIVOXstart {
 			media.mkdir();
 		}
 	}
-	
-	
-	public void createOriginalVideo() {
-		if (audio.size() == 0) {
-			start(audio.getInitialVideoName(), audio.getInitialVideoPath());
-		}
-	}
-
-	// Return time values
-	public String getOriginalVideoPath() {
-		return audio.getInitialVideoPath();
-	}
-	public int getSliderPosition() {
-		return positionSlider.getValue();
-	}
-	
-	/** This method returns the total time of the selected video file */
-	public int getLengthOfVideo() {
-		return lengthOfVideo;
-	}
-	
-	
-	/** This function sets the length of the slider to correspond to the length of the video
-	 * it is called every time a new video is played (as otherwise it stays constant
-	 * 
-	 * It also sets the far right label to the total time of the video
-	 */
-	public void setLengthOfSlider() {
-		positionSlider.setVideoLength(lengthOfVideo);
-		endTime.setTimeText(lengthOfVideo);
-	}
-	
 	/** This method creates and executes the background task that updates the slider */
 	private void createUpdateSlider() {
 		update = new UpdateSlider();
@@ -391,7 +449,21 @@ public class VIDIVOXstart {
 		positionTime.setTimeText(positionSlider.getValue());
 	}
 	
-	
+	/** This method is used when a new audio file has been added to the video */
+	public void addAudio(Media media) {
+		// Add the new audio file to the list of audio files
+		audio.add(media);
+		listModel.addElement(media.getName());
+		// As there is now at least one audio file in the list, set all of the buttons to be enabled
+		mergeButton.setEnabled(true);
+		editButton.setEnabled(true);
+		deleteButton.setEnabled(true);
+		saveButton.setEnabled(true);
+		optionsButton.setEnabled(true);
+		
+		// As the user has added media, this means that there are changes that can be saved
+		isSaved = false;
+	}
 
 	/** This function is called when a new video is selected, it resets (or sets) the list of media 
 	 * so that each new video has a different set of added audio files
@@ -412,48 +484,9 @@ public class VIDIVOXstart {
 		setLengthOfSlider();
 	}
 	
-	/** This method is used when a new audio file has been added to the video */
-	public void addAudio(Media media) {
-		// Add the new audio file to the list of audio files
-		audio.add(media);
-		listModel.addElement(media.getName());
-		// As there is now at least one audio file in the list, set all of the buttons to be enabled
-		mergeButton.setEnabled(true);
-		editButton.setEnabled(true);
-		deleteButton.setEnabled(true);
-		saveButton.setEnabled(true);
-		
-		// As the user has added media, this means that there are changes that can be saved
-		isSaved = false;
-	}
 	
-	/** When the merge button is pressed, any changes that the user has made to the video, and it's 
-	 * list of audio files is applied, and this new video is played
-	 */
-	public void merge() {
-		//show loading screen so user knows something is happening
-		LoadingFrame lf  = new LoadingFrame();
-		lf.setVisible(true);
-		
-		// If no audio files have been added, just play the original video
-		// Disable the save function and merge funtion as there is no change from the original file
-		
-		// Otherwise create the new video file with the changes to the audio files applied
-		if (audio.size() == 0) {
-			startPage.start(audio.getInitialVideoName(), audio.getInitialVideoPath());
-			mergeButton.setEnabled(false);
-			saveButton.setEnabled(false);
-			lf.dispose();
-			
-			// If the audio size is zero this means that all added audio has been removed, and it has
-			// gone back to the original video
-			isSaved = true;
-		} else {
-			BackgroundMakeFile merge = new BackgroundMakeFile(audio.getInitialVideoPath(), audio, lf, audio.getInitialVideoName());
-			merge.addReferenceToStart(startPage);
-			merge.execute();
-		}
-	}
+	
+	
 	
 	
 	
@@ -529,9 +562,10 @@ public class VIDIVOXstart {
 		selectVideo.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	FileChooser file = new FileChooser();
-		    	file.addReferenceToStart(startPage);
-		    	file.showFileChooser(true);
+		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+		    		mediaPlayerComponent.getMediaPlayer().pause();
+		    	}
+		    	new FileChooser(true, start, null);
 		    }
 		});
 		selectionPanel.add(selectVideo, BorderLayout.NORTH);
@@ -543,7 +577,10 @@ public class VIDIVOXstart {
 		createAudio.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
-		    	AudioPage audio = new AudioPage(null);
+		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+		    		mediaPlayerComponent.getMediaPlayer().pause();
+		    	}
+		    	CreateNewAudio audio = new CreateNewAudio(null, null);
 		    	audio.setVisible(true);
 		    }
 		});
@@ -569,7 +606,7 @@ public class VIDIVOXstart {
 		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
 		    		mediaPlayerComponent.getMediaPlayer().pause();
 		    	}
-		    	AddAudio addAudioPage = new AddAudio(startPage);
+		    	AddAudioToVideo addAudioPage = new AddAudioToVideo(start);
 		    	addAudioPage.setVisible(true);
 		    }
 		});
@@ -585,6 +622,8 @@ public class VIDIVOXstart {
 		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
 		    		mediaPlayerComponent.getMediaPlayer().pause();
 		    	}
+		    	FestivalOptions options = new FestivalOptions(audio, start);
+		    	options.setVisible(true);
 			}
 		});
 		optionsButton.setEnabled(false);
@@ -611,13 +650,33 @@ public class VIDIVOXstart {
 		
 		// Create action listeners for the audio manipulation buttons:
 		
+		// Note: save button is only enabled when audio is added
+		videoControlPanel.add(saveButton);
+		saveButton.addActionListener(new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		    	//can only save if not rewinding or fastforwarding (otherwise some errors occur)
+		    	if(!isRewinding && !isFastForwarding){
+		    		if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+			    		mediaPlayerComponent.getMediaPlayer().pause();
+			    	}
+		    		// Note that this save doesn't require input text etc. as it is to save a video
+		    		SaveAudioOrVideo save = new SaveAudioOrVideo(null, null, false, null, 0.0);
+		    		save.setVisible(true);
+		    		isSaved = true;
+		    	}
+		    }
+		});
+		saveButton.setFont(new Font("Tahoma", Font.BOLD, 14));
+		saveButton.setEnabled(false);
+		
 		// The merge button refreshes the video, i.e. if changes have been made to the audio files
 		// (deleted, position in video changed) this puts these changes into place and plays the newly
 		// created video
 		mergeButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				startPage.merge();
+				start.merge();
 			}
 		});
 		mergeButton.setEnabled(false);
@@ -631,8 +690,10 @@ public class VIDIVOXstart {
 				// Check that something has been selected, otherwise these buttons do nothing
 				if (!list.isSelectionEmpty()) {
 					// Pause the video, and create a new frame that lets you change the audio position
-					mediaPlayerComponent.getMediaPlayer().pause();
-					EditMediaTime edit = new EditMediaTime(audio, list.getSelectedIndex(), startPage);
+					if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+			    		mediaPlayerComponent.getMediaPlayer().pause();
+			    	}
+					EditMediaTime edit = new EditMediaTime(audio, list.getSelectedIndex(), start);
 					edit.setVisible(true);
 				}
 			}
@@ -655,6 +716,7 @@ public class VIDIVOXstart {
 					if (audio.size() == 0) {
 						deleteButton.setEnabled(false);
 						editButton.setEnabled(false);
+						optionsButton.setEnabled(false);
 					}
 				}
 			}
@@ -673,15 +735,22 @@ public class VIDIVOXstart {
 	private void createVideoPlaybackButtons() {
 		buttonPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		 
-		buttonPanel.add(rewindButton);
+		videoControlPanel.add(rewindButton);
 		rewindButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
+		    	// If the video is just playing, start rewinding
 		    	if(!isRewinding && !isFastForwarding && !isPaused) {
 		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
 	    			playAndPauseButton.setText(">");
 		    		isRewinding = true;
-		    		rewinding = new BackgroundRewind(startPage, mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
+		    		rewinding = new BackgroundRewind(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
+		    		rewinding.execute();
+		    	} else if (isFastForwarding) {
+		    		// otherwise if the video is fastforwarding, cancel this, and start rewinding
+		    		cancelRewindForward();
+		    		isRewinding = true;
+		    		rewinding = new BackgroundRewind(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
 		    		rewinding.execute();
 		    	}
 		    }
@@ -690,7 +759,7 @@ public class VIDIVOXstart {
 		rewindButton.setEnabled(false);
 		rewindButton.setEnabled(false);
 		
-		buttonPanel.add(playAndPauseButton);
+		videoControlPanel.add(playAndPauseButton);
 		playAndPauseButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -708,15 +777,22 @@ public class VIDIVOXstart {
 		playAndPauseButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		playAndPauseButton.setEnabled(false);
 		
-		buttonPanel.add(fastForwardButton);
+		videoControlPanel.add(fastForwardButton);
 		fastForwardButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
+		    	// If the video is just playing, start fastforwarding
 		    	if(!isRewinding && !isFastForwarding && !isPaused) {
 		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
 	    			playAndPauseButton.setText(">");
 		    		isFastForwarding = true;
-		    		fastForward = new BackgroundForward(startPage, mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
+		    		fastForward = new BackgroundForward(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
+		    		fastForward.execute();
+		    	} else if (isRewinding) {
+		    		// If the video is rewinding, stop the rewinding, and start fastforwarding
+		    		cancelRewindForward();
+		    		isFastForwarding = true;
+		    		fastForward = new BackgroundForward(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
 		    		fastForward.execute();
 		    	}
 		    }
@@ -724,7 +800,7 @@ public class VIDIVOXstart {
 		fastForwardButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		fastForwardButton.setEnabled(false);
 		
-		buttonPanel.add(muteButton);
+		videoControlPanel.add(muteButton);
 		muteButton.addActionListener(new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
@@ -734,28 +810,47 @@ public class VIDIVOXstart {
 		muteButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		muteButton.setEnabled(false);
 		
-		// Note: save button is only enabled when audio is added
-		buttonPanel.add(saveButton);
-		saveButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	//can only save if not rewinding or fastforwarding (otherwise some errors occur)
-		    	if(!isRewinding && !isFastForwarding){
-		    		if(!isPaused){
-		    			toggleIsPaused();
-		    			mediaPlayerComponent.getMediaPlayer().pause();
-		    		}
-		    		// Note that this save doesn't require input text etc. as it is to save a video
-		    		SavePage save = new SavePage(null, false, null, 0.0);
-		    		save.setVisible(true);
-		    		isSaved = true;
-		    	}
-		    }
+		buttonPanel.setLayout(new BorderLayout());
+		
+		buttonPanel.add(videoControlPanel, BorderLayout.CENTER);
+		
+		soundPanel.add(soundLabel);
+		soundPanel.add(soundSlider);
+		
+		soundSlider.addMouseListener(new MouseListener() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// When the mouse is clicked the position of the mouse is recorder and used to change
+				// the position of the slider
+				Point p = e.getPoint();
+				BasicSliderUI sliderUI = (BasicSliderUI) soundSlider.getUI();
+				int value = sliderUI.valueForXPosition(p.x);
+				
+				soundSlider.setValue(value);
+				setVolume();
+			}
+			@Override
+			public void mousePressed(MouseEvent e) {/* Do nothing */}
+			@Override
+			// When the slider is released this is the position that the video goes to
+			public void mouseReleased(MouseEvent e) {
+				setVolume();
+			}
+			@Override
+			public void mouseEntered(MouseEvent e) {/* Do nothing */}
+			@Override
+			public void mouseExited(MouseEvent e) {/* Do nothing */}
 		});
-		saveButton.setFont(new Font("Tahoma", Font.BOLD, 14));
-		saveButton.setEnabled(false);
+		
+		soundPanel.add(soundLevel);
+		buttonPanel.add(soundPanel, BorderLayout.EAST);
         
 		// Add this button panel to the video frame
 		contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+	}
+	
+	private void setVolume() {
+		soundLevel.setText(soundSlider.getValue() + "%");
+		mediaPlayerComponent.getMediaPlayer().setVolume(soundSlider.getValue());
 	}
 }
