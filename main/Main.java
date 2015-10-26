@@ -1,6 +1,8 @@
-package video;
+package main;
 
 import java.awt.EventQueue;
+
+import video.VIDIVOXstart;
 
 /**
  * Initialises the start Frame and creates the files that store all of the files

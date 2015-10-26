@@ -1,0 +1,9 @@
+VIDIVOX Video Commentator - Hannah Sampson: hsam938
+
+The jar is called VIDIVOXVideoCommentator.jar and the user should just copy this jar into any reasonable location on their computer.
+
+To run: navigate to this location on your terminal. Then type the command: "java -jar VIDIVOXVideoCommentator.jar"
+
+It will be easier to test if the sample_video_big_bucky_1_mintute.avi is in the folder created by the program which is called VIDIVOXmedia (which will be in the same place as the jar you have just saved). This is because this is the file chooser's default location but you can navigate to any folder you wish. 
+
+Any commentary that the program creates will be saved in VIDIVOXmedia as mp3 files. This video player only plays .avi.

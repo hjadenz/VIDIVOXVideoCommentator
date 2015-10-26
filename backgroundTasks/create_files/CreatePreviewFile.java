@@ -78,8 +78,8 @@ public class CreatePreviewFile extends SwingWorker<Void, Integer> {
 		// Save user's commentary to a temporary file that includes this
 		// commentary in the video
 		cmd = "ffmpeg -ss " + hours + ":" + minutes + ":" + seconds + " -t "
-				+ time + " -i " + videoPath + " -i " + audioPath
-				+ " -map 0:v -map 1:a VIDIVOXmedia/.preview.avi";
+				+ time + " -i \'" + videoPath + "\' -i \'" + audioPath
+				+ "\' -map 0:v -map 1:a VIDIVOXmedia/.preview.avi";
 		builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 
 		try {

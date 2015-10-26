@@ -233,6 +233,15 @@ public class VIDIVOXstart {
 						SwingUtilities.invokeLater(new Runnable() {
 							@Override
 							public void run() {
+								// As the player has reached the end of the
+								// video, if it was fastforwarding or rewinding
+								// set it so that it isn't anymore as when the
+								// video starts up it will start up just playing
+								// normally
+								isRewinding = false;
+								isFastForwarding = false;
+								isPaused = false;
+
 								// Before replaying, the thread waits for one
 								// second to give the media player
 								// time to play properly (crashes otherwise)
@@ -385,10 +394,6 @@ public class VIDIVOXstart {
 		isFastForwarding = b;
 	}
 
-	public void setIsPaused(boolean b) {
-		isPaused = b;
-	}
-
 	// --------------------------------------------------------------------------------------------------
 	// Getters and setters for video and audio details
 	// --------------------------------------------------------------------------------------------------
@@ -470,12 +475,10 @@ public class VIDIVOXstart {
 		if (isRewinding) {
 			rewinding.cancel(true);
 			isRewinding = false;
-			playAndPauseButton.setText("||");
 		}
 		if (isFastForwarding) {
 			fastForward.cancel(true);
 			isFastForwarding = false;
-			playAndPauseButton.setText("||");
 		}
 	}
 
@@ -487,7 +490,7 @@ public class VIDIVOXstart {
 	 * Create the media file that stores all the files created by the media
 	 * player
 	 */
-	protected static void createDirectories() {
+	public static void createDirectories() {
 		// Create a folder to store the media we want to be able to play or
 		// listen to
 		File media = new File("VIDIVOXmedia");
@@ -849,7 +852,6 @@ public class VIDIVOXstart {
 				// If the video is just playing, start rewinding
 				if (!isRewinding && !isFastForwarding && !isPaused) {
 					isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
-					playAndPauseButton.setText(">");
 					isRewinding = true;
 					rewinding = new BackgroundRewind(mediaPlayerComponent,
 							mediaPlayerComponent.getMediaPlayer().getTime(),
@@ -876,10 +878,16 @@ public class VIDIVOXstart {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// only change the label of the button when the video is
-				// changing
-				// between play and pause, not when fastforwarding or rewinding
+				// changing between play and pause, not when fastforwarding or
+				// rewinding
 				if (!isRewinding && !isFastForwarding) {
-					mediaPlayerComponent.getMediaPlayer().pause();
+					if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+						mediaPlayerComponent.getMediaPlayer().pause();
+						isPaused = true;
+					} else {
+						mediaPlayerComponent.getMediaPlayer().play();
+						isPaused = false;
+					}
 				} else {
 					// play button also cancels rewind or forward function
 					cancelRewindForward();
@@ -896,7 +904,6 @@ public class VIDIVOXstart {
 				// If the video is just playing, start fastforwarding
 				if (!isRewinding && !isFastForwarding && !isPaused) {
 					isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
-					playAndPauseButton.setText(">");
 					isFastForwarding = true;
 					fastForward = new BackgroundForward(mediaPlayerComponent,
 							mediaPlayerComponent.getMediaPlayer().getTime(),

@@ -104,8 +104,10 @@ public class FestivalOptions extends JFrame {
 	}
 
 	private void createSoundtrackVolumeControl() {
+		originalPanel.setLayout(new BorderLayout());
+		
 		sound = new JLabel("Original Soundtrack Volume");
-		originalPanel.add(sound);
+		originalPanel.add(sound, BorderLayout.NORTH);
 
 		soundtrackVolume = new JSlider(0, 100, audio.getSoundtrackVolume());
 		soundtrackVolume.addMouseListener(new MouseListener() {
@@ -144,9 +146,9 @@ public class FestivalOptions extends JFrame {
 			public void mouseExited(MouseEvent e) {
 			}
 		});
-		originalPanel.add(soundtrackVolume);
+		originalPanel.add(soundtrackVolume, BorderLayout.CENTER);
 
 		percentage = new JLabel(audio.getSoundtrackVolume() + "%");
-		originalPanel.add(percentage);
+		originalPanel.add(percentage, BorderLayout.EAST);
 	}
 }

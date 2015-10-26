@@ -74,8 +74,8 @@ public class MediaList extends ArrayList<Media> {
 	 * file
 	 */
 	public int calculateLengthOfVideo() {
-		String cmd = "ffprobe " + this.getInitialVideoPath()
-				+ " -show_format 2>&1 | sed -n 's/duration=//p' ";
+		String cmd = "ffprobe \"" + this.getInitialVideoPath()
+				+ "\" -show_format 2>&1 | sed -n 's/duration=//p' ";
 		String line = null;
 		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 		try {

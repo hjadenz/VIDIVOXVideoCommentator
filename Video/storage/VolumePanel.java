@@ -1,5 +1,6 @@
 package video.storage;
 
+import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -30,13 +31,15 @@ public class VolumePanel extends JPanel {
 	public VolumePanel(Media a) {
 		this.audioFile = a;
 
+		panel.setLayout(new BorderLayout());
+		
 		fileName = new JLabel(audioFile.getName());
-		panel.add(fileName);
+		panel.add(fileName, BorderLayout.NORTH);
 
 		setUpSlider();
 
 		volume = new JLabel(audioFile.getVolume() + "%");
-		panel.add(volume);
+		panel.add(volume, BorderLayout.EAST);
 	}
 
 	/**
@@ -81,6 +84,6 @@ public class VolumePanel extends JPanel {
 			}
 		});
 
-		panel.add(volumeSlider);
+		panel.add(volumeSlider, BorderLayout.CENTER);
 	}
 }

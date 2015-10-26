@@ -58,7 +58,7 @@ public class CreateVideoFile extends SwingWorker<Void, Integer> {
 		// altered to whatever has been set for it
 		for (int i = 1; i <= audioPaths.size(); i++) {
 			// Add audio file path
-			audioString = audioString + " -i " + audioPaths.getAudioPath(i - 1);
+			audioString = audioString + " -i \'" + audioPaths.getAudioPath(i - 1) + "\'";
 			// Add the delay and volume change
 			filters = filters + "[" + i + ":a]adelay="
 					+ (audioPaths.getAudioPosition(i - 1) * 1000 + 1)
@@ -75,7 +75,7 @@ public class CreateVideoFile extends SwingWorker<Void, Integer> {
 		
 		// Note the code for this ffmpeg command was adapted from
 		// http://superuser.com/questions/716320/ffmpeg-placing-audio-at-specific-location-with-complex-filters
-		cmd = "ffmpeg -y -i " + videoPath + audioString + " -filter_complex \""
+		cmd = "ffmpeg -y -i \'" + videoPath + "\'" + audioString + " -filter_complex \""
 				+ filters + "[0:a]volume="
 				+ (audioPaths.getSoundtrackVolume() / 20) + "[aud0];" + inputs
 				+ "[aud0]amix=inputs=" + count
