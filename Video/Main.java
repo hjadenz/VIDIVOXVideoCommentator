@@ -2,7 +2,9 @@ package video;
 
 import java.awt.EventQueue;
 
-/**Initialises the start Frame and creates the files that store all of the files that the program creates
+/**
+ * Initialises the start Frame and creates the files that store all of the files
+ * that the program creates
  * 
  * @author Hannah Sampson
  */

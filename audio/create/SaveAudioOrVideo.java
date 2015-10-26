@@ -13,18 +13,20 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import backgroundTasks.SaveAudio;
-import backgroundTasks.SaveVideo;
+import backgroundtasks.SaveAudio;
+import backgroundtasks.SaveVideo;
 
 import audio.NameTaken;
-import audio.addToVideo.AddAudioToVideo;
+import audio.add_to_video.AddAudioToVideo;
 
 import video.VIDIVOXstart;
 
-/** This class is a frame that allows the user to choose a filename for the audio or video that 
- *  they are trying to save
- *  
- *  It checks whether the file exists, and if it does, asks the user if they want to rename or override
+/**
+ * This class is a frame that allows the user to choose a filename for the audio
+ * or video that they are trying to save
+ * 
+ * It checks whether the file exists, and if it does, asks the user if they want
+ * to rename or override
  * 
  * @author Hannah Sampson
  */
@@ -40,57 +42,55 @@ public class SaveAudioOrVideo extends JFrame {
 	private String inputText;
 	private VIDIVOXstart start;
 
-	/**
-	 * Create the frame.
-	 */
-	public SaveAudioOrVideo(VIDIVOXstart start, String inputText, boolean saveAudio, AddAudioToVideo audio, double speed) {
-		
+	public SaveAudioOrVideo(VIDIVOXstart start, String inputText,
+			boolean saveAudio, AddAudioToVideo audio, double speed) {
+
 		this.audio = audio;
 		this.saveAudio = saveAudio;
 		this.speed = speed;
 		this.inputText = inputText;
 		this.start = start;
-		
+
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		
+
 		setBounds(100, 100, 300, 250);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		
+
 		setUp();
 	}
-	
-	/** Check whether the file you were trying to create already exists
-	 *  if it does, prompt the user to select whether they want to rename the file, or overwrite the
-	 *  existing one.
-	 * 
-	 * @param filename
-	 * @param inputText
+
+	/**
+	 * Check whether the file you were trying to create already exists if it
+	 * does, prompt the user to select whether they want to rename the file, or
+	 * overwrite the existing one.
 	 */
 	private void doesFileExist(String filename, String inputText) {
-		//figure out extension, depending on if audio or video
+		// figure out extension, depending on if audio or video
 		String mediaTypeExt;
 		mediaTypeExt = (saveAudio) ? ".mp3" : ".avi";
-		
-		//check if file exists
-		String cmd = "[ -e VIDIVOXmedia/" + filename + mediaTypeExt+" ]";
+
+		// check if file exists
+		String cmd = "[ -e VIDIVOXmedia/" + filename + mediaTypeExt + " ]";
 		ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", cmd);
 		try {
 			Process process = builder.start();
 			process.waitFor();
-			//if taken, prompt the user to overwrite or not
+			// if taken, prompt the user to overwrite or not
 			if (process.exitValue() == 0) {
-				NameTaken taken = new NameTaken(filename, inputText,saveAudio, audio, speed, start);
+				NameTaken taken = new NameTaken(filename, inputText, saveAudio,
+						audio, speed, start);
 				taken.setVisible(true);
 				frame.dispose();
-			//filename is good, go and save the media
+				// filename is good, go and save the media
 			} else {
-				if(saveAudio){
-					SaveAudio saveAudio = new SaveAudio(inputText, filename, speed, audio);
+				if (saveAudio) {
+					SaveAudio saveAudio = new SaveAudio(inputText, filename,
+							speed, audio);
 					saveAudio.execute();
-				}else{
+				} else {
 					SaveVideo save = new SaveVideo(filename, start);
 					save.execute();
 				}
@@ -100,38 +100,40 @@ public class SaveAudioOrVideo extends JFrame {
 			e.printStackTrace();
 		}
 	}
-	
+
 	// --------------------------------------------------------------------------------------------------
 	// This method sets up the frame
 	// --------------------------------------------------------------------------------------------------
-	
+
 	private void setUp() {
 		String mediaType;
 		mediaType = (saveAudio) ? "Audio" : "Video";
-		
-		JLabel title = new JLabel("Please give this "+mediaType+" file a name:");
+
+		JLabel title = new JLabel("Please give this " + mediaType
+				+ " file a name:");
 		title.setFont(new Font("Tahoma", Font.BOLD, 14));
 		title.setBounds(15, 20, 280, 30);
 		contentPane.add(title);
-		
+
 		JLabel limit = new JLabel("Please use only a-z, A-Z and 0-9 to name");
 		limit.setFont(new Font("Tahoma", Font.BOLD, 10));
 		limit.setBounds(15, 40, 270, 30);
 		contentPane.add(limit);
-		
+
 		JLabel limit2 = new JLabel("No special characters (e.g. .,/!?)");
 		limit2.setFont(new Font("Tahoma", Font.BOLD, 10));
 		limit2.setBounds(15, 60, 270, 30);
 		contentPane.add(limit2);
-		
+
 		final JTextField text = new JTextField();
 		text.setBounds(25, 100, 230, 30);
 		contentPane.add(text);
 		text.setColumns(10);
-		
-		text.setText("My"+mediaType+"File");
-		
-		// If the user confirms their name choice, and is made up only of digits or characters:
+
+		text.setText("My" + mediaType + "File");
+
+		// If the user confirms their name choice, and is made up only of digits
+		// or characters:
 		JButton confirm = new JButton("Confirm");
 		confirm.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -139,15 +141,16 @@ public class SaveAudioOrVideo extends JFrame {
 				String filename = text.getText();
 				if (filename.matches("[a-zA-Z0-9]+")) {
 					doesFileExist(filename, inputText);
-				}else{
-					JOptionPane.showMessageDialog(null, "Please enter a-z or 0-9 characters only.");
+				} else {
+					JOptionPane.showMessageDialog(null,
+							"Please enter a-z or 0-9 characters only.");
 				}
 			}
 		});
 		confirm.setFont(new Font("Tahoma", Font.BOLD, 10));
 		confirm.setBounds(15, 150, 120, 30);
 		contentPane.add(confirm);
-		
+
 		JButton cancel = new JButton("Cancel");
 		cancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {

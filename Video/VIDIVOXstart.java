@@ -25,17 +25,17 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSliderUI;
 
-import backgroundTasks.UpdateSlider;
-import backgroundTasks.createFiles.CreateVideoFile;
-import backgroundTasks.videoControl.BackgroundForward;
-import backgroundTasks.videoControl.BackgroundRewind;
+import backgroundtasks.UpdateSlider;
+import backgroundtasks.create_files.CreateVideoFile;
+import backgroundtasks.video_control.BackgroundForward;
+import backgroundtasks.video_control.BackgroundRewind;
 import audio.LoadingFrame;
-import audio.addToVideo.AddAudioToVideo;
-import audio.addToVideo.EditMediaTime;
+import audio.add_to_video.AddAudioToVideo;
+import audio.add_to_video.EditMediaTime;
 import audio.create.CreateNewAudio;
 import audio.create.SaveAudioOrVideo;
 
-import chooseFiles.FileChooser;
+import choose_files.FileChooser;
 
 import time.PositionSlider;
 import time.TimeLabel;
@@ -47,341 +47,393 @@ import video.storage.FestivalOptions;
 import video.storage.Media;
 import video.storage.MediaList;
 
-/**This class creates the main frame that holds the video component and a number of buttons that allow
- * video manipulation and editing. 
+/**
+ * This class creates the main frame that holds the video component and a number
+ * of buttons that allow video manipulation and editing.
  * 
- * Also contains components that remember the selected video's path and name, as well as all the 
- * information associated with any audio files that have been added to the video. 
+ * Also contains components that remember the selected video's path and name, as
+ * well as all the information associated with any audio files that have been
+ * added to the video.
  * 
  * @author Hannah Sampson
  */
 
 public class VIDIVOXstart {
 
-	// Panels that contain all the buttons and components for the frame ---------------------------------
+	// Panels that contain all the buttons and components for the frame
+	// ---------------------------------
 	private static VIDIVOXstart start;
 	private JPanel contentPanel = new JPanel();
 	private JPanel videoPanel = new JPanel();
 	private JPanel selectionPanel = new JPanel();
 	private JPanel leftHandPanel = new JPanel();
 	private JPanel audioPanel = new JPanel();
-	
+
 	private JPanel videoControlPanel = new JPanel();
 	private JPanel buttonPanel = new JPanel();
 	private JPanel soundPanel = new JPanel();
-	
+
 	private JPanel mergeButtonsPanel = new JPanel();
 	private JPanel sliderPanel = new JPanel();
 	private JPanel audioFilesPanel = new JPanel();
 
 	private JFrame frame;
-	
+
 	private final EmbeddedMediaPlayerComponent mediaPlayerComponent;
 
-	// Buttons ------------------------------------------------------------------------------------------
+	// Buttons
+	// ------------------------------------------------------------------------------------------
 	private JButton selectVideo = new JButton("Select Video");
 	private JButton createAudio = new JButton("Create New mp3");
 	private JButton addAudioButton = new JButton("Add Audio");
 	private JButton optionsButton = new JButton("Options");
 
 	private JButton rewindButton = new JButton("<<");
-	private JButton playAndPauseButton = new JButton(">");
+	private JButton playAndPauseButton = new JButton("⊳||");
 	private JButton fastForwardButton = new JButton(">>");
 	private JButton muteButton = new JButton("Mute");
 	private JButton saveButton = new JButton("Save");
-	
+
 	private JLabel soundLevel = new JLabel("100%");
 	private JSlider soundSlider = new JSlider(0, 100, 100);
 	private JLabel soundLabel = new JLabel("Sound");
 
-	// States of the video ------------------------------------------------------------------------------
+	// States of the video
+	// ------------------------------------------------------------------------------
 	private boolean isRewinding = false;
 	private boolean isFastForwarding = false;
 	private boolean isPaused = false;
 	private String videoTitle;
 	private String videoPath;
 	private boolean isMuted;
-	
-	// These booleans are used when the user tries to close the application -----------------------------
+
+	// These booleans are used when the user tries to close the application
+	// -----------------------------
 	private boolean isSaved = true;
-	
+
 	private BackgroundForward fastForward;
 	private BackgroundRewind rewinding;
-	
-	// Audio files that have been added to the video ----------------------------------------------------
+
+	// Audio files that have been added to the video
+	// ----------------------------------------------------
 	private static MediaList audio;
 	private JList<String> list;
 	private DefaultListModel<String> listModel;
-	
+
 	private JButton mergeButton = new JButton("Merge");
 	private JButton editButton = new JButton("Edit");
 	private JButton deleteButton = new JButton("Delete");
-	
-	// Components that show the progression of the video ------------------------------------------------
+
+	// Components that show the progression of the video
+	// ------------------------------------------------
 	private UpdateSlider update;
 	private TimeLabel endTime = new TimeLabel();
 	private TimeLabel positionTime = new TimeLabel();
 	// Set the length of the video to be 60 seconds by default
 	private int lengthOfVideo = 60;
 	private PositionSlider positionSlider;
-	
-	
-	/** This initial frame holds the video player, all the buttons that control the video playback
-	 *  and the buttons that let you change video/audio selection etc.
-	 *  
-	 *  All buttons apart from "select video" and "create commentary" are greyed out upon starting to
-	 *  enforce that the user needs to select a video before being able to try edit or play anything
+
+	/**
+	 * This initial frame holds the video player, all the buttons that control
+	 * the video playback and the buttons that let you change video/audio
+	 * selection etc.
+	 * 
+	 * All buttons apart from "select video" and "create commentary" are greyed
+	 * out upon starting to enforce that the user needs to select a video before
+	 * being able to try edit or play anything
 	 */
 	public VIDIVOXstart(final String vt, final String vp) {
-		
+
 		VIDIVOXstart.start = this;
 		this.videoTitle = vt;
 		this.videoPath = vp;
-		
-        frame = new JFrame("VIDIVOX");
-        frame.setBounds(100, 100, 1000, 550);
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-            	// When the user presses close, if they haven't made any changes since the last save
-            	// ask the user whether they want to: save and close, close without saving, or cancel
-            	
-            	if (!isSaved) {
-            		if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-            			mediaPlayerComponent.getMediaPlayer().pause();
-            		}
-            		
-            		SaveOnExit save = new SaveOnExit(start);
-            		save.setVisible(true);
-            		
-            	} else {
-            		//releases media component and associated native resources upon closing the window
-                    releaseMediaPlayer();
-            	}
-            }
-        });
-        
+
+		frame = new JFrame("VIDIVOX");
+		frame.setBounds(100, 100, 1000, 550);
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// When the user presses close, if they haven't made any changes
+				// since the last save
+				// ask the user whether they want to: save and close, close
+				// without saving, or cancel
+
+				if (!isSaved) {
+					if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+						mediaPlayerComponent.getMediaPlayer().pause();
+					}
+
+					SaveOnExit save = new SaveOnExit(start);
+					save.setVisible(true);
+
+				} else {
+					// releases media component and associated native resources
+					// upon closing the window
+					releaseMediaPlayer();
+				}
+			}
+		});
+
 		contentPanel.setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-        
-		// JPanel for media player ----------------------------------------------------------------------
+
+		// JPanel for media player
+		// ----------------------------------------------------------------------
 		mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 		videoPanel.setLayout(new BorderLayout());
 		videoPanel.add(mediaPlayerComponent, BorderLayout.CENTER);
-		
-		// Add slider to control the video playback -----------------------------------------------------
+
+		// Add slider to control the video playback
+		// -----------------------------------------------------
 		createContentsOfSliderPanel();
-		
-		// JPanel to contain the control panel on the lefthand side -------------------------------------
+
+		// JPanel to contain the control panel on the lefthand side
+		// -------------------------------------
 		leftHandPanel.setLayout(new BorderLayout());
 		contentPanel.add(leftHandPanel, BorderLayout.WEST);
-				
-		// Create contents of the leftHandPanel ---------------------------------------------------------
-		
-		// Create the panel that contains the ability to select a video or to create a new audio file
-		// Note this contains the two buttons that are enabled when the program starts
+
+		// Create contents of the leftHandPanel
+		// ---------------------------------------------------------
+
+		// Create the panel that contains the ability to select a video or to
+		// create a new audio file
+		// Note this contains the two buttons that are enabled when the program
+		// starts
 		createContentsOfSelectionPanel();
-		// Create the panel that hold the buttons that let you alter the audio in the selected video
+		// Create the panel that hold the buttons that let you alter the audio
+		// in the selected video
 		createContentsOfAudioPanel();
-		// Add a list that contains all the audio files that the user has added to the video
+		// Add a list that contains all the audio files that the user has added
+		// to the video
 		createContentsOfAudioFilesPanel();
 
-		// Create the controls for video playback -------------------------------------------------------
+		// Create the controls for video playback
+		// -------------------------------------------------------
 		// play, pause, rewind, fastforward, save, mute ...
 		createVideoPlaybackButtons();
-		
-		//add listeners for the media component ---------------------------------------------------------
-        mediaPlayerComponent.getMediaPlayer().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
-            @Override
-            public void playing(MediaPlayer mediaPlayer) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        frame.setTitle("VIDIVOX - " + videoTitle);
-                    }
-                });
-            }
-            
-            //when finished the video will automatically play again
-           @Override
-            public void finished(MediaPlayer mediaPlayer) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                    	// Before replaying, the thread waits for one second to give the media player
-                    	// time to play properly (crashes otherwise)
-                    	try {
-                    		Thread.sleep(1000);
-                    	} catch (InterruptedException e) {
-                    		Thread.currentThread().interrupt();
-                    	}
-                    	
-                    	// However if what was playing was just a preview, it won't play again
-                    	if (videoPath != "VIDIVOXmedia/.preview.avi") {
-                    		start.runPlayer();
-                    	}
-                    }
-                });
-            } 
-           
-           //if the video cannot play, or the audio and video ffmpeg didn't occur properly display an 
-           // error message
-            @Override
-            public void error(MediaPlayer mediaPlayer) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        JOptionPane.showMessageDialog(frame, "Failed to play media.", "Error", JOptionPane.ERROR_MESSAGE
-                        );
-                    }
-                });
-            }
-        });		
-		
+
+		// add listeners for the media component
+		// ---------------------------------------------------------
+		mediaPlayerComponent.getMediaPlayer().addMediaPlayerEventListener(
+				new MediaPlayerEventAdapter() {
+					@Override
+					public void playing(MediaPlayer mediaPlayer) {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								frame.setTitle("VIDIVOX - " + videoTitle);
+							}
+						});
+					}
+
+					// when finished the video will automatically play again
+					@Override
+					public void finished(MediaPlayer mediaPlayer) {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								// Before replaying, the thread waits for one
+								// second to give the media player
+								// time to play properly (crashes otherwise)
+								try {
+									Thread.sleep(1000);
+								} catch (InterruptedException e) {
+									Thread.currentThread().interrupt();
+								}
+
+								// However if what was playing was just a
+								// preview, it won't play again
+								if (videoPath != "VIDIVOXmedia/.preview.avi") {
+									start.runPlayer();
+								}
+							}
+						});
+					}
+
+					// if the video cannot play, or the audio and video ffmpeg
+					// didn't occur properly display an
+					// error message
+					@Override
+					public void error(MediaPlayer mediaPlayer) {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								JOptionPane.showMessageDialog(frame,
+										"Failed to play media.", "Error",
+										JOptionPane.ERROR_MESSAGE);
+							}
+						});
+					}
+				});
+
 		// The created frame is titled with the name of the video
 		frame.setContentPane(contentPanel);
 		frame.setVisible(true);
 		frame.setTitle("VIDIVOX - " + videoTitle);
 
-		//video always starts with sound on
+		// video always starts with sound on
 		mediaPlayerComponent.getMediaPlayer().mute(false);
 	}
-	
+
 	// --------------------------------------------------------------------------------------------------
 	// Methods to do with the application being exited
 	// --------------------------------------------------------------------------------------------------
-	
-	/** This method releases the media player properly when closing the application */
+
+	/**
+	 * This method releases the media player properly when closing the
+	 * application
+	 */
 	public void releaseMediaPlayer() {
 		if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
 			mediaPlayerComponent.getMediaPlayer().stop();
 		}
-		
-		//releases media component and associated native resources upon closing the window
-        mediaPlayerComponent.release();
-        System.exit(0);
+
+		// releases media component and associated native resources upon closing
+		// the window
+		mediaPlayerComponent.release();
+		System.exit(0);
 	}
-	/** Set the isSaved boolean from other classes - i.e. when exiting on close, if the user chooses
-	 *  to save this method is called with true
+
+	/**
+	 * Set the isSaved boolean from other classes - i.e. when exiting on close,
+	 * if the user chooses to save this method is called with true
 	 */
 	public void setSaved(boolean save) {
 		isSaved = save;
 	}
-	
+
 	// --------------------------------------------------------------------------------------------------
-	// Methods to do with the video running 
+	// Methods to do with the video running
 	// --------------------------------------------------------------------------------------------------
-	
-	/** Run player enables all of the video manipulation buttons and runs the video itself. */
+
+	/**
+	 * Run player enables all of the video manipulation buttons and runs the
+	 * video itself.
+	 */
 	public void runPlayer() {
 		mediaPlayerComponent.getMediaPlayer().playMedia(videoPath);
 		// When a video is playing set all the buttons able to be used
-    	muteButton.setEnabled(true);
-    	rewindButton.setEnabled(true);
-    	fastForwardButton.setEnabled(true);
-    	addAudioButton.setEnabled(true);
-    	playAndPauseButton.setEnabled(true);
-    	positionSlider.setEnabled(true);
-    	
-    	playAndPauseButton.setText("||");
+		muteButton.setEnabled(true);
+		rewindButton.setEnabled(true);
+		fastForwardButton.setEnabled(true);
+		addAudioButton.setEnabled(true);
+		playAndPauseButton.setEnabled(true);
+		positionSlider.setEnabled(true);
+		soundSlider.setEnabled(true);
 	}
+
 	/** When the video is started it is run from the current frame */
-	public void start(final String videoTitle, final String videoPath){
-        new NativeDiscovery().discover();
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                start.setStartPage(videoTitle, videoPath);
-                start.runPlayer();
-            }
-        });
+	public void start(final String videoTitle, final String videoPath) {
+		new NativeDiscovery().discover();
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				start.setStartPage(videoTitle, videoPath);
+				start.runPlayer();
+			}
+		});
 	}
-	/** When the merge button is pressed, any changes that the user has made to the video, and it's 
-	 * list of audio files is applied, and this new video is played
+
+	/**
+	 * When the merge button is pressed, any changes that the user has made to
+	 * the video, and it's list of audio files is applied, and this new video is
+	 * played
 	 */
 	public void merge() {
-		//show loading screen so user knows something is happening
-		LoadingFrame lf  = new LoadingFrame();
+		// show loading screen so user knows something is happening
+		LoadingFrame lf = new LoadingFrame();
 		lf.setVisible(true);
-		
+
 		// If no audio files have been added, just play the original video
-		// Disable the save function and merge funtion as there is no change from the original file
-		
-		// Otherwise create the new video file with the changes to the audio files applied
+		// Disable the save function and merge funtion as there is no change
+		// from the original file
+
+		// Otherwise create the new video file with the changes to the audio
+		// files applied
 		if (audio.size() == 0) {
-			start.start(audio.getInitialVideoName(), audio.getInitialVideoPath());
+			start.start(audio.getInitialVideoName(),
+					audio.getInitialVideoPath());
 			mergeButton.setEnabled(false);
 			saveButton.setEnabled(false);
 			lf.dispose();
-			
-			// If the audio size is zero this means that all added audio has been removed, and it has
+
+			// If the audio size is zero this means that all added audio has
+			// been removed, and it has
 			// gone back to the original video
 			isSaved = true;
 		} else {
-			CreateVideoFile merge = new CreateVideoFile(audio.getInitialVideoPath(), audio, lf, audio.getInitialVideoName());
+			CreateVideoFile merge = new CreateVideoFile(
+					audio.getInitialVideoPath(), audio, lf,
+					audio.getInitialVideoName());
 			merge.addReferenceToStart(start);
 			merge.execute();
 			isSaved = false;
 		}
 	}
-	
+
 	// --------------------------------------------------------------------------------------------------
-	// Logic for setting booleans for if the video is fastforwarding, rewinding or paused
+	// Logic for setting booleans for if the video is fastforwarding, rewinding
+	// or paused
 	// --------------------------------------------------------------------------------------------------
-	
-	public void setIsRewinding(boolean b){
+
+	public void setIsRewinding(boolean b) {
 		isRewinding = b;
 	}
-	public void setIsFastForwarding(boolean b){
+
+	public void setIsFastForwarding(boolean b) {
 		isFastForwarding = b;
 	}
-	public void setIsPaused(boolean b){
+
+	public void setIsPaused(boolean b) {
 		isPaused = b;
 	}
 
 	// --------------------------------------------------------------------------------------------------
-	// Methods to do with toggling buttons, options, etc.
-	// --------------------------------------------------------------------------------------------------
-	
-	/** Depending on whether the video is playing or paused the text of the play/pause button changes */
-	public void toggleIsPaused(){
-		isPaused = (isPaused == true) ? false : true;
-		String newLabel;
-		newLabel = (isPaused) ? ">" : "||";
-		playAndPauseButton.setText(newLabel);
-	}
-	
-	// --------------------------------------------------------------------------------------------------
 	// Getters and setters for video and audio details
 	// --------------------------------------------------------------------------------------------------
-	
+
 	// Video details
-	public String getVideoPath(){
+	public String getVideoPath() {
 		return videoPath;
 	}
-	public String getVideoTitle(){
+
+	public String getVideoTitle() {
 		return videoTitle;
 	}
+
 	public String getOriginalVideoPath() {
 		return audio.getInitialVideoPath();
 	}
+
 	/** This method returns the total time of the selected video file */
 	public int getLengthOfVideo() {
 		return lengthOfVideo;
 	}
-	/** Set the variables associated with the frame to the currently selected video */
+
+	/**
+	 * Set the variables associated with the frame to the currently selected
+	 * video
+	 */
 	public void setStartPage(String videoTitle, String videoPath) {
 		this.videoTitle = videoTitle;
 		this.videoPath = videoPath;
 	}
-	
+
 	// Slider details
 	public int getSliderPosition() {
 		return positionSlider.getValue();
 	}
-	/** This function sets the length of the slider to correspond to the length of the video
-	 * it is called every time a new video is played (as otherwise it stays constant
+
+	private void setVolume() {
+		soundLevel.setText(soundSlider.getValue() + "%");
+		mediaPlayerComponent.getMediaPlayer().setVolume(soundSlider.getValue());
+	}
+
+	/**
+	 * This function sets the length of the slider to correspond to the length
+	 * of the video it is called every time a new video is played (as otherwise
+	 * it stays constant
 	 * 
 	 * It also sets the far right label to the total time of the video
 	 */
@@ -389,15 +441,19 @@ public class VIDIVOXstart {
 		positionSlider.setVideoLength(lengthOfVideo);
 		endTime.setTimeText(lengthOfVideo);
 	}
-	/** Take the value from the slider and use this to set the position of the video
-	 *  Called when a mouse event occurs for the slider
+
+	/**
+	 * Take the value from the slider and use this to set the position of the
+	 * video Called when a mouse event occurs for the slider
 	 */
 	public void setPositionBasedOnSlider() {
-		float position = (float)positionSlider.getValue() / lengthOfVideo;
+		float position = (float) positionSlider.getValue() / lengthOfVideo;
 		setPosition(position);
 	}
-	/** As long as there is a video selected, use the "position" value to set the position of the
-	 * 	media player
+
+	/**
+	 * As long as there is a video selected, use the "position" value to set the
+	 * position of the media player
 	 */
 	public void setPosition(float position) {
 		update.cancel(true);
@@ -409,269 +465,310 @@ public class VIDIVOXstart {
 		// When the position is finalised, start the slider checher again
 		createUpdateSlider();
 	}
-	
+
 	private void cancelRewindForward() {
-		if(isRewinding){
+		if (isRewinding) {
 			rewinding.cancel(true);
 			isRewinding = false;
 			playAndPauseButton.setText("||");
 		}
-		if(isFastForwarding){
+		if (isFastForwarding) {
 			fastForward.cancel(true);
 			isFastForwarding = false;
 			playAndPauseButton.setText("||");
 		}
 	}
-	
+
 	// --------------------------------------------------------------------------------------------------
 	// Creating new components and necessary files etc.
 	// --------------------------------------------------------------------------------------------------
-		
-	/** Create the media file that stores all the files created by the media player */
+
+	/**
+	 * Create the media file that stores all the files created by the media
+	 * player
+	 */
 	protected static void createDirectories() {
-		// Create a folder to store the media we want to be able to play or listen to
+		// Create a folder to store the media we want to be able to play or
+		// listen to
 		File media = new File("VIDIVOXmedia");
 		if (!(media.isDirectory())) {
 			media.mkdir();
 		}
 	}
-	/** This method creates and executes the background task that updates the slider */
+
+	/**
+	 * This method creates and executes the background task that updates the
+	 * slider
+	 */
 	private void createUpdateSlider() {
 		update = new UpdateSlider();
 		update.addReferenceToStart(this);
 		update.execute();
 	}
-	
-	/** This is the method that is called to update the slider underneath the playing video
-	 *  It is called by UpdateSlider (a background task which can be cancelled at any point) */
+
+	/**
+	 * This is the method that is called to update the slider underneath the
+	 * playing video It is called by UpdateSlider (a background task which can
+	 * be cancelled at any point)
+	 */
 	public void updateSlider() {
-		positionSlider.setValue((int) mediaPlayerComponent.getMediaPlayer().getTime()/1000);
+		positionSlider.setValue((int) mediaPlayerComponent.getMediaPlayer()
+				.getTime() / 1000);
 		positionTime.setTimeText(positionSlider.getValue());
 	}
-	
+
 	/** This method is used when a new audio file has been added to the video */
 	public void addAudio(Media media) {
 		// Add the new audio file to the list of audio files
 		audio.add(media);
 		listModel.addElement(media.getName());
-		// As there is now at least one audio file in the list, set all of the buttons to be enabled
+		// As there is now at least one audio file in the list, set all of the
+		// buttons to be enabled
 		mergeButton.setEnabled(true);
 		editButton.setEnabled(true);
 		deleteButton.setEnabled(true);
 		saveButton.setEnabled(true);
 		optionsButton.setEnabled(true);
-		
-		// As the user has added media, this means that there are changes that can be saved
+
+		// As the user has added media, this means that there are changes that
+		// can be saved
 		isSaved = false;
 	}
 
-	/** This function is called when a new video is selected, it resets (or sets) the list of media 
-	 * so that each new video has a different set of added audio files
+	/**
+	 * This function is called when a new video is selected, it resets (or sets)
+	 * the list of media so that each new video has a different set of added
+	 * audio files
 	 * 
-	 * It also sets the length of the slider and sets the label associated with this
+	 * It also sets the length of the slider and sets the label associated with
+	 * this
 	 */
 	public void createNewVideo(String name, String path) {
 		audio = new MediaList();
 		audio.addInitial(name, path);
-		
+
 		listModel.clear();
-		
+
 		mergeButton.setEnabled(false);
 		deleteButton.setEnabled(false);
 		editButton.setEnabled(false);
-		
+
 		lengthOfVideo = audio.getLengthOfVideo();
 		setLengthOfSlider();
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	//---------------------------------------------------------------------------------------------------
+
+	// ---------------------------------------------------------------------------------------------------
 	// The following methods are used to set up the initial frame
-	//---------------------------------------------------------------------------------------------------
-	
-	/** Creates the contents of the panel that holds:
-	 * 		the slider associated with the video
-	 * 		the label that holds the final length of the video file
-	 *		the label that holds a time that progresses with the video (like the slider)
-	 *
-	 * Also add logic to slider that lets the user click on the slider to change the position of the
-	 * video
+	// ---------------------------------------------------------------------------------------------------
+
+	/**
+	 * Creates the contents of the panel that holds: the slider associated with
+	 * the video the label that holds the final length of the video file the
+	 * label that holds a time that progresses with the video (like the slider)
+	 * 
+	 * Also add logic to slider that lets the user click on the slider to change
+	 * the position of the video
 	 */
 	private void createContentsOfSliderPanel() {
 		sliderPanel.setLayout(new BorderLayout());
-		
+
 		positionSlider = new PositionSlider();
 		positionSlider.setEnabled(true);
-		
+
 		sliderPanel.add(positionSlider, BorderLayout.CENTER);
 		sliderPanel.add(endTime, BorderLayout.EAST);
 		sliderPanel.add(positionTime, BorderLayout.WEST);
-		
+
 		videoPanel.add(sliderPanel, BorderLayout.SOUTH);
-		
-		// Start the updater for the position slider (note that this is a background task)
-		// this updater method updates the slider itself and the positionTime label
+
+		// Start the updater for the position slider (note that this is a
+		// background task)
+		// this updater method updates the slider itself and the positionTime
+		// label
 		createUpdateSlider();
-		
+
 		contentPanel.add(videoPanel, BorderLayout.CENTER);
-		
-		// Add listeners for the slider - user can change vieo position by clicking on slider
+
+		// Add listeners for the slider - user can change vieo position by
+		// clicking on slider
 		positionSlider.addMouseListener(new MouseListener() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				// When the mouse is clicked the position of the mouse is recorder and used to change
+				// When the mouse is clicked the position of the mouse is
+				// recorder and used to change
 				// the position of the slider
 				Point p = e.getPoint();
 				BasicSliderUI sliderUI = (BasicSliderUI) positionSlider.getUI();
 				int value = sliderUI.valueForXPosition(p.x);
-				
+
 				positionSlider.setValue(value);
 				setPositionBasedOnSlider();
 			}
+
 			@Override
-			public void mousePressed(MouseEvent e) {update.cancel(true);}
+			public void mousePressed(MouseEvent e) {
+				update.cancel(true);
+			}
+
 			@Override
-			// When the slider is released this is the position that the video goes to
-			public void mouseReleased(MouseEvent e) {setPositionBasedOnSlider();}
+			// When the slider is released this is the position that the video
+			// goes to
+			public void mouseReleased(MouseEvent e) {
+				setPositionBasedOnSlider();
+			}
+
 			@Override
-			public void mouseEntered(MouseEvent e) {/* Do nothing */}
+			public void mouseEntered(MouseEvent e) {/* Do nothing */
+			}
+
 			@Override
-			public void mouseExited(MouseEvent e) {/* Do nothing */}
+			public void mouseExited(MouseEvent e) {/* Do nothing */
+			}
 		});
 	}
-	
-	/** This method creates and sets up the action listeners for:
-	 *  	the button that lets the user select a video to play/edit
-	 *  	the button that lets the user create a new commentary that is not associated with a video
+
+	/**
+	 * This method creates and sets up the action listeners for: the button that
+	 * lets the user select a video to play/edit the button that lets the user
+	 * create a new commentary that is not associated with a video
 	 */
 	private void createContentsOfSelectionPanel() {
-		
+
 		selectionPanel.setLayout(new BorderLayout());
 		selectionPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		leftHandPanel.add(selectionPanel, BorderLayout.SOUTH);
-		
+
 		// This button lets the user select a video to play
-		selectVideo.setFont(new Font("Tahoma", Font.PLAIN, 20));		
+		selectVideo.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		// Create a new file chooser to navigate the user's directories
 		selectVideo.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-		    		mediaPlayerComponent.getMediaPlayer().pause();
-		    	}
-		    	new FileChooser(true, start, null);
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+					mediaPlayerComponent.getMediaPlayer().pause();
+				}
+				new FileChooser(true, start, null);
+			}
 		});
 		selectionPanel.add(selectVideo, BorderLayout.NORTH);
-		
-		// This button lets the user create a new mp3 commentary file (without having a video selected)
-		createAudio.setFont(new Font("Tahoma", Font.PLAIN, 20));		
-		// Create a new "create audio" frame - note that there is no reference needed back to any 
-		// AddAudio class as this commentary is created separately from the editor
+
+		// This button lets the user create a new mp3 commentary file (without
+		// having a video selected)
+		createAudio.setFont(new Font("Tahoma", Font.PLAIN, 20));
+		// Create a new "create audio" frame - note that there is no reference
+		// needed back to any
+		// AddAudio class as this commentary is created separately from the
+		// editor
 		createAudio.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-		    		mediaPlayerComponent.getMediaPlayer().pause();
-		    	}
-		    	CreateNewAudio audio = new CreateNewAudio(null, null);
-		    	audio.setVisible(true);
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+					mediaPlayerComponent.getMediaPlayer().pause();
+				}
+				CreateNewAudio audio = new CreateNewAudio(null, null);
+				audio.setVisible(true);
+			}
 		});
 		selectionPanel.add(createAudio, BorderLayout.SOUTH);
 	}
-	
-	/** Create the buttons in the panel on the left side of the video that:
-	 *  	let the user choose an audio file to add to the selected video
-	 *  	let the user pick specific options when it comes to playing the video
+
+	/**
+	 * Create the buttons in the panel on the left side of the video that: let
+	 * the user choose an audio file to add to the selected video let the user
+	 * pick specific options when it comes to playing the video
 	 */
 	private void createContentsOfAudioPanel() {
-		
+
 		audioPanel.setLayout(new BorderLayout());
 		audioPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		leftHandPanel.add(audioPanel, BorderLayout.NORTH);
-		
-		// This either create an audio to add to the video or select an already created one
+
+		// This either create an audio to add to the video or select an already
+		// created one
 		addAudioButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		addAudioButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	// If the video is not already paused, pause it when the frame opens
-		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-		    		mediaPlayerComponent.getMediaPlayer().pause();
-		    	}
-		    	AddAudioToVideo addAudioPage = new AddAudioToVideo(start);
-		    	addAudioPage.setVisible(true);
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// If the video is not already paused, pause it when the frame
+				// opens
+				if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+					mediaPlayerComponent.getMediaPlayer().pause();
+				}
+				AddAudioToVideo addAudioPage = new AddAudioToVideo(start);
+				addAudioPage.setVisible(true);
+			}
 		});
 		addAudioButton.setEnabled(false);
 		audioPanel.add(addAudioButton, BorderLayout.NORTH);
-		
+
 		// This button lets the user create a commentary to add to the video
 		optionsButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		optionsButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// If the video is not already paused, pause it when the frame opens
-		    	if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-		    		mediaPlayerComponent.getMediaPlayer().pause();
-		    	}
-		    	FestivalOptions options = new FestivalOptions(audio, start);
-		    	options.setVisible(true);
+				// If the video is not already paused, pause it when the frame
+				// opens
+				if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+					mediaPlayerComponent.getMediaPlayer().pause();
+				}
+				FestivalOptions options = new FestivalOptions(audio, start);
+				options.setVisible(true);
 			}
 		});
 		optionsButton.setEnabled(false);
 		audioPanel.add(optionsButton, BorderLayout.SOUTH);
 	}
-	
-	/** This method creates a list that holds all the audio files that the user adds to a selected video
-	 *  file, and the buttons that let the user change and manipulate audio files that have already been
-	 *  added. 
+
+	/**
+	 * This method creates a list that holds all the audio files that the user
+	 * adds to a selected video file, and the buttons that let the user change
+	 * and manipulate audio files that have already been added.
 	 */
 	private void createContentsOfAudioFilesPanel() {
 		audioFilesPanel.setLayout(new BorderLayout());
 		mergeButtonsPanel.setLayout(new BorderLayout());
-		
-		// Create a new list that holds all the audio files that the user adds to the video files as they
-		// add them. This means that the user can manipulate audio files that they have already added
+
+		// Create a new list that holds all the audio files that the user adds
+		// to the video files as they
+		// add them. This means that the user can manipulate audio files that
+		// they have already added
 		// without having to start again
 		listModel = new DefaultListModel<String>();
 		list = new JList<String>(listModel);
-		
+
 		list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		new JScrollPane(list);
 		audioFilesPanel.add(list, BorderLayout.CENTER);
-		
+
 		// Create action listeners for the audio manipulation buttons:
-		
+
 		// Note: save button is only enabled when audio is added
 		videoControlPanel.add(saveButton);
 		saveButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	//can only save if not rewinding or fastforwarding (otherwise some errors occur)
-		    	if(!isRewinding && !isFastForwarding){
-		    		if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-			    		mediaPlayerComponent.getMediaPlayer().pause();
-			    	}
-		    		// Note that this save doesn't require input text etc. as it is to save a video
-		    		SaveAudioOrVideo save = new SaveAudioOrVideo(null, null, false, null, 0.0);
-		    		save.setVisible(true);
-		    		isSaved = true;
-		    	}
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// can only save if not rewinding or fastforwarding (otherwise
+				// some errors occur)
+				if (!isRewinding && !isFastForwarding) {
+					if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
+						mediaPlayerComponent.getMediaPlayer().pause();
+					}
+					// Note that this save doesn't require input text etc. as it
+					// is to save a video
+					SaveAudioOrVideo save = new SaveAudioOrVideo(null, null,
+							false, null, 0.0);
+					save.setVisible(true);
+					isSaved = true;
+				}
+			}
 		});
 		saveButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		saveButton.setEnabled(false);
-		
-		// The merge button refreshes the video, i.e. if changes have been made to the audio files
-		// (deleted, position in video changed) this puts these changes into place and plays the newly
+
+		// The merge button refreshes the video, i.e. if changes have been made
+		// to the audio files
+		// (deleted, position in video changed) this puts these changes into
+		// place and plays the newly
 		// created video
 		mergeButton.addActionListener(new ActionListener() {
 			@Override
@@ -681,38 +778,47 @@ public class VIDIVOXstart {
 		});
 		mergeButton.setEnabled(false);
 		mergeButtonsPanel.add(mergeButton, BorderLayout.EAST);
-		
-		// edit button takes the user to a frame where they can edit the placement of the selected 
+
+		// edit button takes the user to a frame where they can edit the
+		// placement of the selected
 		// audio file, otherwise does nothing
 		editButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// Check that something has been selected, otherwise these buttons do nothing
+				// Check that something has been selected, otherwise these
+				// buttons do nothing
 				if (!list.isSelectionEmpty()) {
-					// Pause the video, and create a new frame that lets you change the audio position
+					// Pause the video, and create a new frame that lets you
+					// change the audio position
 					if (mediaPlayerComponent.getMediaPlayer().isPlaying()) {
-			    		mediaPlayerComponent.getMediaPlayer().pause();
-			    	}
-					EditMediaTime edit = new EditMediaTime(audio, list.getSelectedIndex(), start);
+						mediaPlayerComponent.getMediaPlayer().pause();
+					}
+					EditMediaTime edit = new EditMediaTime(audio, list
+							.getSelectedIndex(), start);
 					edit.setVisible(true);
 				}
 			}
 		});
 		editButton.setEnabled(false);
 		mergeButtonsPanel.add(editButton, BorderLayout.CENTER);
-		
-		// Delete button removes the selected audio file from the list of audio that has been added
+
+		// Delete button removes the selected audio file from the list of audio
+		// that has been added
 		// to the video file, otherwise does nothing
 		deleteButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// Check if something has been selected, otherwise these buttons do nothing
+				// Check if something has been selected, otherwise these buttons
+				// do nothing
 				if (!list.isSelectionEmpty()) {
-					// Remove the selected audio from the list of audio files associated with this video
+					// Remove the selected audio from the list of audio files
+					// associated with this video
 					audio.remove(list.getSelectedIndex());
 					listModel.remove(list.getSelectedIndex());
-					// If there was only one item in the list, this deletion will mean that there are
-					// now no audio files added, so the edit and delete buttons are no longer active
+					// If there was only one item in the list, this deletion
+					// will mean that there are
+					// now no audio files added, so the edit and delete buttons
+					// are no longer active
 					if (audio.size() == 0) {
 						deleteButton.setEnabled(false);
 						editButton.setEnabled(false);
@@ -723,134 +829,150 @@ public class VIDIVOXstart {
 		});
 		deleteButton.setEnabled(false);
 		mergeButtonsPanel.add(deleteButton, BorderLayout.WEST);
-		
+
 		// Add audio file tools to the main frame
 		audioFilesPanel.add(mergeButtonsPanel, BorderLayout.SOUTH);
 		leftHandPanel.add(audioFilesPanel, BorderLayout.CENTER);
 	}
-	
-	/** This method creates the video playback buttons, and sets them all to be greyed out for the start
-	 *  of the application 
+
+	/**
+	 * This method creates the video playback buttons, and sets them all to be
+	 * greyed out for the start of the application
 	 */
 	private void createVideoPlaybackButtons() {
 		buttonPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		 
+
 		videoControlPanel.add(rewindButton);
 		rewindButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	// If the video is just playing, start rewinding
-		    	if(!isRewinding && !isFastForwarding && !isPaused) {
-		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
-	    			playAndPauseButton.setText(">");
-		    		isRewinding = true;
-		    		rewinding = new BackgroundRewind(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
-		    		rewinding.execute();
-		    	} else if (isFastForwarding) {
-		    		// otherwise if the video is fastforwarding, cancel this, and start rewinding
-		    		cancelRewindForward();
-		    		isRewinding = true;
-		    		rewinding = new BackgroundRewind(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
-		    		rewinding.execute();
-		    	}
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// If the video is just playing, start rewinding
+				if (!isRewinding && !isFastForwarding && !isPaused) {
+					isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
+					playAndPauseButton.setText(">");
+					isRewinding = true;
+					rewinding = new BackgroundRewind(mediaPlayerComponent,
+							mediaPlayerComponent.getMediaPlayer().getTime(),
+							isMuted);
+					rewinding.execute();
+				} else if (isFastForwarding) {
+					// otherwise if the video is fastforwarding, cancel this,
+					// and start rewinding
+					cancelRewindForward();
+					isRewinding = true;
+					rewinding = new BackgroundRewind(mediaPlayerComponent,
+							mediaPlayerComponent.getMediaPlayer().getTime(),
+							isMuted);
+					rewinding.execute();
+				}
+			}
 		});
 		rewindButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		rewindButton.setEnabled(false);
 		rewindButton.setEnabled(false);
-		
+
 		videoControlPanel.add(playAndPauseButton);
 		playAndPauseButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	//only change the label of the button when the video is changing
-		    	//between play and pause, not when fastforwarding or rewinding
-		    	if(!isRewinding && !isFastForwarding){
-		    		toggleIsPaused();
-		    		mediaPlayerComponent.getMediaPlayer().pause();
-		    	}else{
-		    		//play button also cancels rewind or forward function
-		    		cancelRewindForward();
-		    	}
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// only change the label of the button when the video is
+				// changing
+				// between play and pause, not when fastforwarding or rewinding
+				if (!isRewinding && !isFastForwarding) {
+					mediaPlayerComponent.getMediaPlayer().pause();
+				} else {
+					// play button also cancels rewind or forward function
+					cancelRewindForward();
+				}
+			}
 		});
 		playAndPauseButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		playAndPauseButton.setEnabled(false);
-		
+
 		videoControlPanel.add(fastForwardButton);
 		fastForwardButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	// If the video is just playing, start fastforwarding
-		    	if(!isRewinding && !isFastForwarding && !isPaused) {
-		    		isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
-	    			playAndPauseButton.setText(">");
-		    		isFastForwarding = true;
-		    		fastForward = new BackgroundForward(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
-		    		fastForward.execute();
-		    	} else if (isRewinding) {
-		    		// If the video is rewinding, stop the rewinding, and start fastforwarding
-		    		cancelRewindForward();
-		    		isFastForwarding = true;
-		    		fastForward = new BackgroundForward(mediaPlayerComponent,mediaPlayerComponent.getMediaPlayer().getTime(), isMuted);
-		    		fastForward.execute();
-		    	}
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// If the video is just playing, start fastforwarding
+				if (!isRewinding && !isFastForwarding && !isPaused) {
+					isMuted = mediaPlayerComponent.getMediaPlayer().isMute();
+					playAndPauseButton.setText(">");
+					isFastForwarding = true;
+					fastForward = new BackgroundForward(mediaPlayerComponent,
+							mediaPlayerComponent.getMediaPlayer().getTime(),
+							isMuted);
+					fastForward.execute();
+				} else if (isRewinding) {
+					// If the video is rewinding, stop the rewinding, and start
+					// fastforwarding
+					cancelRewindForward();
+					isFastForwarding = true;
+					fastForward = new BackgroundForward(mediaPlayerComponent,
+							mediaPlayerComponent.getMediaPlayer().getTime(),
+							isMuted);
+					fastForward.execute();
+				}
+			}
 		});
 		fastForwardButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		fastForwardButton.setEnabled(false);
-		
+
 		videoControlPanel.add(muteButton);
 		muteButton.addActionListener(new ActionListener() {
-		    @Override
-		    public void actionPerformed(ActionEvent e) {
-		    	mediaPlayerComponent.getMediaPlayer().mute();
-		    }
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				mediaPlayerComponent.getMediaPlayer().mute();
+			}
 		});
 		muteButton.setFont(new Font("Tahoma", Font.BOLD, 14));
 		muteButton.setEnabled(false);
-		
+
 		buttonPanel.setLayout(new BorderLayout());
-		
+
 		buttonPanel.add(videoControlPanel, BorderLayout.CENTER);
-		
+
 		soundPanel.add(soundLabel);
 		soundPanel.add(soundSlider);
-		
+		soundSlider.setEnabled(false);
+
 		soundSlider.addMouseListener(new MouseListener() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				// When the mouse is clicked the position of the mouse is recorder and used to change
+				// When the mouse is clicked the position of the mouse is
+				// recorder and used to change
 				// the position of the slider
 				Point p = e.getPoint();
 				BasicSliderUI sliderUI = (BasicSliderUI) soundSlider.getUI();
 				int value = sliderUI.valueForXPosition(p.x);
-				
+
 				soundSlider.setValue(value);
 				setVolume();
 			}
+
 			@Override
-			public void mousePressed(MouseEvent e) {/* Do nothing */}
+			public void mousePressed(MouseEvent e) {/* Do nothing */
+			}
+
 			@Override
-			// When the slider is released this is the position that the video goes to
+			// When the slider is released this is the position that the video
+			// goes to
 			public void mouseReleased(MouseEvent e) {
 				setVolume();
 			}
+
 			@Override
-			public void mouseEntered(MouseEvent e) {/* Do nothing */}
+			public void mouseEntered(MouseEvent e) {/* Do nothing */
+			}
+
 			@Override
-			public void mouseExited(MouseEvent e) {/* Do nothing */}
+			public void mouseExited(MouseEvent e) {/* Do nothing */
+			}
 		});
-		
+
 		soundPanel.add(soundLevel);
 		buttonPanel.add(soundPanel, BorderLayout.EAST);
-        
+
 		// Add this button panel to the video frame
 		contentPanel.add(buttonPanel, BorderLayout.SOUTH);
-	}
-	
-	private void setVolume() {
-		soundLevel.setText(soundSlider.getValue() + "%");
-		mediaPlayerComponent.getMediaPlayer().setVolume(soundSlider.getValue());
 	}
 }
